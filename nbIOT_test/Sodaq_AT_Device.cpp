@@ -1,26 +1,26 @@
 /*
- * Copyright (c) 2013-2015 Kees Bakker.  All rights reserved.
- *
- * This file is part of GPRSbee.
- *
- * GPRSbee is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation, either version 3 of
- * the License, or(at your option) any later version.
- *
- * GPRSbee is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with GPRSbee.  If not, see
- * <http://www.gnu.org/licenses/>.
- */
+    Copyright (c) 2013-2015 Sodaq.  All rights reserved.
+
+    This file is part of Sodaq_nbIOT.
+
+    Sodaq_nbIOT is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Lesser General Public License as
+    published by the Free Software Foundation, either version 3 of
+    the License, or(at your option) any later version.
+
+    Sodaq_nbIOT is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+    GNU Lesser General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public
+    License along with Sodaq_nbIOT.  If not, see
+    <http://www.gnu.org/licenses/>.
+*/
 
 #include "Sodaq_AT_Device.h"
 
-#define DEBUG
+//#define DEBUG
 
 #ifdef DEBUG
 #define debugPrintLn(...) { if (!this->_disableDiag && this->_diagStream) this->_diagStream->println(__VA_ARGS__); }
@@ -36,37 +36,28 @@
 #define CRLF "\r\n"
 
 // TODO this needs to be set in the compiler directives. Find something else to do
-#define SODAQ_GSM_TERMINATOR CRLF
+#define SODAQ_AT_DEVICE_TERMINATOR CRLF
 
-#ifndef SODAQ_GSM_TERMINATOR
-#warning "SODAQ_GSM_TERMINATOR is not set"
-#define SODAQ_GSM_TERMINATOR CRLF
+#ifndef SODAQ_AT_DEVICE_TERMINATOR
+#warning "SODAQ_AT_DEVICE_TERMINATOR is not set"
+#define SODAQ_AT_DEVICE_TERMINATOR CRLF
 #endif
 
-#define SODAQ_GSM_TERMINATOR_LEN (sizeof(SODAQ_GSM_TERMINATOR) - 1) // without the NULL terminator
+#define SODAQ_AT_DEVICE_TERMINATOR_LEN (sizeof(SODAQ_AT_DEVICE_TERMINATOR) - 1) // without the NULL terminator
 
-#define SODAQ_GSM_MODEM_DEFAULT_INPUT_BUFFER_SIZE 250
+#define SODAQ_AT_DEVICE_DEFAULT_INPUT_BUFFER_SIZE 250
 
 // Constructor
 Sodaq_AT_Device::Sodaq_AT_Device() :
     _modemStream(0),
     _diagStream(0),
     _disableDiag(false),
-    _inputBufferSize(SODAQ_GSM_MODEM_DEFAULT_INPUT_BUFFER_SIZE),
+    _inputBufferSize(SODAQ_AT_DEVICE_DEFAULT_INPUT_BUFFER_SIZE),
     _inputBuffer(0),
-    _apn(0),
-    _apnUser(0),
-    _apnPass(0),
-    _pin(0),
     _onoff(0),
     _baudRateChangeCallbackPtr(0),
     _appendCommand(false),
-    _lastRSSI(0),
-    _CSQtime(0),
-    _minRSSI(-93),      // -93 dBm
-    _echoOff(false),
-    _startOn(0),
-    _tcpClosedHandler(0)
+    _startOn(0)
 {
     this->_isBufferInitialized = false;
 }
@@ -84,6 +75,7 @@ bool Sodaq_AT_Device::on()
 
     // wait for power up
     bool timeout = true;
+
     for (uint8_t i = 0; i < 10; i++) {
         if (isAlive()) {
             timeout = false;
@@ -106,8 +98,6 @@ bool Sodaq_AT_Device::off()
     if (_onoff) {
         _onoff->off();
     }
-
-    _echoOff = false;
 
     return !isOn();
 }
@@ -201,14 +191,14 @@ size_t Sodaq_AT_Device::print(unsigned long value, int base)
     return _modemStream->print(value, base);
 };
 
-size_t Sodaq_AT_Device::println(const __FlashStringHelper *ifsh)
+size_t Sodaq_AT_Device::println(const __FlashStringHelper* ifsh)
 {
     size_t n = print(ifsh);
     n += println();
     return n;
 }
 
-size_t Sodaq_AT_Device::println(const String &s)
+size_t Sodaq_AT_Device::println(const String& s)
 {
     size_t n = print(s);
     n += println();
@@ -281,7 +271,7 @@ size_t Sodaq_AT_Device::println(void)
     return i;
 }
 
-// Initializes the input buffer and makes sure it is only initialized once. 
+// Initializes the input buffer and makes sure it is only initialized once.
 // Safe to call multiple times.
 void Sodaq_AT_Device::initBuffer()
 {
@@ -301,54 +291,6 @@ void Sodaq_AT_Device::setModemStream(Stream& stream)
     this->_modemStream = &stream;
 }
 
-void Sodaq_AT_Device::setApn(const char * apn, const char * user, const char * pass)
-{
-    if (apn) {
-        if (!_apn || strcmp(_apn, apn) != 0) {
-            size_t len = strlen(apn);
-            _apn = static_cast<char*>(realloc(_apn, len + 1));
-            strcpy(_apn, apn);
-        }
-    } else {
-        // Should we release the memory?
-    }
-    if (user) {
-        setApnUser(user);
-    }
-    if (pass) {
-        setApnPass(pass);
-    }
-}
-
-void Sodaq_AT_Device::setApnUser(const char * user)
-{
-    if (user) {
-        if (!_apnUser || strcmp(_apnUser, user) != 0) {
-            size_t len = strlen(user);
-            _apnUser = static_cast<char*>(realloc(_apnUser, len + 1));
-            strcpy(_apnUser, user);
-        }
-    }
-}
-
-void Sodaq_AT_Device::setApnPass(const char * pass)
-{
-    if (pass) {
-        if (!_apnPass || strcmp(_apnPass, pass) != 0) {
-            size_t len = strlen(pass);
-            _apnPass = static_cast<char*>(realloc(_apnPass, len + 1));
-            strcpy(_apnPass, pass);
-        }
-    }
-}
-
-void Sodaq_AT_Device::setPin(const char * pin)
-{
-    size_t len = strlen(pin);
-    _pin = static_cast<char*>(realloc(_pin, len + 1));
-    strcpy(_pin, pin);
-}
-
 // Returns a character from the modem stream if read within _timeout ms or -1 otherwise.
 int Sodaq_AT_Device::timedRead(uint32_t timeout) const
 {
@@ -357,6 +299,7 @@ int Sodaq_AT_Device::timedRead(uint32_t timeout) const
 
     do {
         c = _modemStream->read();
+
         if (c >= 0) {
             return c;
         }
@@ -388,6 +331,7 @@ size_t Sodaq_AT_Device::readBytesUntil(char terminator, char* buffer, size_t len
         *buffer++ = static_cast<char>(c);
         index++;
     }
+
     if (index < length) {
         *buffer = '\0';
     }
@@ -410,7 +354,7 @@ size_t Sodaq_AT_Device::readBytes(uint8_t* buffer, size_t length, uint32_t timeo
         if (c < 0) {
             break;
         }
-        
+
         *buffer++ = static_cast<uint8_t>(c);
         count++;
     }
@@ -426,12 +370,12 @@ size_t Sodaq_AT_Device::readBytes(uint8_t* buffer, size_t length, uint32_t timeo
 size_t Sodaq_AT_Device::readLn(char* buffer, size_t size, uint32_t timeout)
 {
     // Use size-1 to leave room for a string terminator
-    size_t len = readBytesUntil(SODAQ_GSM_TERMINATOR[SODAQ_GSM_TERMINATOR_LEN - 1], buffer, size - 1, timeout);
+    size_t len = readBytesUntil(SODAQ_AT_DEVICE_TERMINATOR[SODAQ_AT_DEVICE_TERMINATOR_LEN - 1], buffer, size - 1, timeout);
 
-    // check if the terminator is more than 1 characters, then check if the first character of it exists 
+    // check if the terminator is more than 1 characters, then check if the first character of it exists
     // in the calculated position and terminate the string there
-    if ((SODAQ_GSM_TERMINATOR_LEN > 1) && (buffer[len - (SODAQ_GSM_TERMINATOR_LEN - 1)] == SODAQ_GSM_TERMINATOR[0])) {
-        len -= SODAQ_GSM_TERMINATOR_LEN - 1;
+    if ((SODAQ_AT_DEVICE_TERMINATOR_LEN > 1) && (buffer[len - (SODAQ_AT_DEVICE_TERMINATOR_LEN - 1)] == SODAQ_AT_DEVICE_TERMINATOR[0])) {
+        len -= SODAQ_AT_DEVICE_TERMINATOR_LEN - 1;
     }
 
     // terminate string, there should always be room for it (see size-1 above)

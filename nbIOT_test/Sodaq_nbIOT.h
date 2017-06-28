@@ -9,6 +9,8 @@
 class Sodaq_nbIOT: public Sodaq_AT_Device
 {
 public:
+    Sodaq_nbIOT();
+
     enum Filter {
         Pending,
         Error
@@ -49,6 +51,14 @@ public:
     int8_t convertCSQ2RSSI(uint8_t csq) const;
     uint8_t convertRSSI2CSQ(int8_t rssi) const;
 
+    void setMinRSSI(int rssi) { _minRSSI = rssi; }
+    void setMinCSQ(int csq) { _minRSSI = convertCSQ2RSSI(csq); }
+    int8_t getMinRSSI() const { return _minRSSI; }
+    uint8_t getCSQtime() const { return _CSQtime; }
+
+    int8_t getLastRSSI() const { return _lastRSSI; }
+
+
     int createSocket(uint16_t localPort = 0);
     bool connectSocket(uint8_t socket, const char* host, uint16_t port);
     //bool socketSend(uint8_t socket, const uint8_t* buffer, size_t size);
@@ -63,22 +73,22 @@ public:
 
 protected:
     // override
-    ResponseTypes readResponse(char* buffer, size_t size, size_t* outSize, uint32_t timeout = DEFAULT_READ_MS)
+    ResponseTypes readResponse(char* buffer, size_t size, size_t* outSize, uint32_t timeout = SODAQ_AT_DEVICE_DEFAULT_READ_MS)
     {
         return readResponse(_inputBuffer, _inputBufferSize, NULL, NULL, NULL, outSize, timeout);
     };
 
     ResponseTypes readResponse(char* buffer, size_t size,
         CallbackMethodPtr parserMethod, void* callbackParameter, void* callbackParameter2 = NULL,
-        size_t* outSize = NULL, uint32_t timeout = DEFAULT_READ_MS);
+        size_t* outSize = NULL, uint32_t timeout = SODAQ_AT_DEVICE_DEFAULT_READ_MS);
 
-    ResponseTypes readResponse(size_t* outSize = NULL, uint32_t timeout = DEFAULT_READ_MS)
+    ResponseTypes readResponse(size_t* outSize = NULL, uint32_t timeout = SODAQ_AT_DEVICE_DEFAULT_READ_MS)
     {
         return readResponse(_inputBuffer, _inputBufferSize, NULL, NULL, NULL, outSize, timeout);
     };
 
     ResponseTypes readResponse(CallbackMethodPtr parserMethod, void* callbackParameter,
-        void* callbackParameter2 = NULL, size_t* outSize = NULL, uint32_t timeout = DEFAULT_READ_MS)
+        void* callbackParameter2 = NULL, size_t* outSize = NULL, uint32_t timeout = SODAQ_AT_DEVICE_DEFAULT_READ_MS)
     {
         return readResponse(_inputBuffer, _inputBufferSize,
             parserMethod, callbackParameter, callbackParameter2,
@@ -88,7 +98,7 @@ protected:
     template<typename T1, typename T2>
     ResponseTypes readResponse(ResponseTypes(*parserMethod)(ResponseTypes& response, const char* parseBuffer, size_t size, T1* parameter, T2* parameter2),
         T1* callbackParameter, T2* callbackParameter2,
-        size_t* outSize = NULL, uint32_t timeout = DEFAULT_READ_MS)
+        size_t* outSize = NULL, uint32_t timeout = SODAQ_AT_DEVICE_DEFAULT_READ_MS)
     {
         return readResponse(_inputBuffer, _inputBufferSize, (CallbackMethodPtr)parserMethod,
             (void*)callbackParameter, (void*)callbackParameter2, outSize, timeout);
@@ -99,6 +109,25 @@ private:
     //bool _socketClosedBit[SOCKET_COUNT];
     //uint32_t _timeToSocketConnect;
     //uint32_t _timeToSocketClose;
+
+    // This is the value of the most recent CSQ
+    // Notice that CSQ is somewhat standard. SIM800/SIM900 and Ublox
+    // compute to comparable numbers. With minor deviations.
+    // For example SIM800
+    //   1              -111 dBm
+    //   2...30         -110... -54 dBm
+    // For example UBlox
+    //   1              -111 dBm
+    //   2..30          -109 to -53 dBm
+    int8_t _lastRSSI;   // 0 not known or not detectable
+
+                        // This is the number of second it took when CSQ was record last
+    uint8_t _CSQtime;
+
+    // This is the minimum required RSSI to continue making the connection
+    // Use convertCSQ2RSSI if you have a CSQ value
+    int _minRSSI;
+
 
     static bool startsWith(const char* pre, const char* str);
     static size_t ipToString(IP_t ip, char* buffer, size_t size);

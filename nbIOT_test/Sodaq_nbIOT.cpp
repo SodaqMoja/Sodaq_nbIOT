@@ -34,6 +34,21 @@
 
 #define DEFAULT_CID "1"
 
+#define NO_IP_ADDRESS ((IP_t)0)
+
+#define IP_FORMAT "%d.%d.%d.%d"
+
+#define IP_TO_TUPLE(x) (uint8_t)(((x) >> 24) & 0xFF), \
+                       (uint8_t)(((x) >> 16) & 0xFF), \
+                       (uint8_t)(((x) >> 8) & 0xFF), \
+                       (uint8_t)(((x) >> 0) & 0xFF)
+
+#define TUPLE_TO_IP(o1, o2, o3, o4) ((((IP_t)o1) << 24) | (((IP_t)o2) << 16) | \
+                                     (((IP_t)o3) << 8) | (((IP_t)o4) << 0))
+
+#define SOCKET_FAIL -1
+
+
 #define NOW (uint32_t)millis()
 
 class Sodaq_nbIotOnOff : public Sodaq_OnOffBee
@@ -77,6 +92,14 @@ void Sodaq_nbIOT::init(Stream& stream, int8_t onoffPin)
 
     sodaq_nbIotOnOff.init(onoffPin);
     _onoff = &sodaq_nbIotOnOff;
+}
+
+Sodaq_nbIOT::Sodaq_nbIOT(): 
+    _lastRSSI(0),
+    _CSQtime(0),
+    _minRSSI(-93) // -93 dBm
+{
+
 }
 
 bool Sodaq_nbIOT::setRadioActive(bool on)
