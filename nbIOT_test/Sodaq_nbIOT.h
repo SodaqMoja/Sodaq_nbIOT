@@ -2,11 +2,11 @@
 #define _Sodaq_nbIOT_h
 
 #include "Arduino.h"
-#include "Sodaq_GSM_Modem.h"
+#include "Sodaq_AT_Device.h"
 
 #define SOCKET_COUNT 7 // TODO
 
-class Sodaq_nbIOT: public Sodaq_GSM_Modem
+class Sodaq_nbIOT: public Sodaq_AT_Device
 {
 public:
     enum Filter {

@@ -109,11 +109,11 @@ typedef void (*BaudRateChangeCallbackPtr)(uint32_t newBaudrate);
 
 #define SOCKET_FAIL -1
 
-class Sodaq_GSM_Modem {
+class Sodaq_AT_Device {
 public:
     // Constructor
-    Sodaq_GSM_Modem();
-    virtual ~Sodaq_GSM_Modem() {}
+    Sodaq_AT_Device();
+    virtual ~Sodaq_AT_Device() {}
 
     // Sets the onoff instance
     void setOnOff(Sodaq_OnOffBee & onoff) { _onoff = &onoff; }
