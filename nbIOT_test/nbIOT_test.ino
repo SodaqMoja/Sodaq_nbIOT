@@ -27,6 +27,8 @@
 #define DEBUG_STREAM SerialUSB
 #define DEBUG_STREAM_BAUD 115200
 
+#define STARTUP_DELAY 5000
+
 const char* apn = "oceanconnect.t-mobile.nl";
 const char* cdp = "172.16.14.20";
 const char* forceOperator = "20416"; // optional - depends on SIM / network
@@ -37,8 +39,12 @@ void showMessageCountFromModem();
 
 void setup()
 {
+    sodaq_wdt_safe_delay(STARTUP_DELAY);
+
     DEBUG_STREAM.begin(DEBUG_STREAM_BAUD);
     MODEM_STREAM.begin(nbiot.getDefaultBaudrate());
+
+    DEBUG_STREAM.print("Initializing and connecting... ");
 
     nbiot.init(MODEM_STREAM, MODEM_ON_OFF_PIN);
     nbiot.setDiag(DEBUG_STREAM);
@@ -53,8 +59,16 @@ void setup()
 
     showMessageCountFromModem();
 
-    if (!nbiot.sendMessage("Hello World")) {
+    const char* message = "Hello World!";
+    DEBUG_STREAM.print("Sending message: \"");
+    DEBUG_STREAM.print(message);
+    DEBUG_STREAM.print("\"... ");
+
+    if (!nbiot.sendMessage(message)) {
         DEBUG_STREAM.println("Could not queue message!");
+    }
+    else {
+        DEBUG_STREAM.println("Message queued for transmission!");
     }
 }
 
@@ -71,6 +85,6 @@ void showMessageCountFromModem()
 {
     DEBUG_STREAM.print("Pending Messages: ");
     DEBUG_STREAM.print(nbiot.getSentMessagesCount(Sodaq_nbIOT::Pending));
-    DEBUG_STREAM.print("  |  Error Messages: ");
+    DEBUG_STREAM.print("  |  Failed Messages: ");
     DEBUG_STREAM.println(nbiot.getSentMessagesCount(Sodaq_nbIOT::Error));
 }

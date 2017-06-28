@@ -21,7 +21,7 @@
 #include "Sodaq_nbIOT.h"
 #include <Sodaq_wdt.h>
 
-#define DEBUG
+//#define DEBUG
 
 #define STR_AT "AT"
 #define STR_RESPONSE_OK "OK"
