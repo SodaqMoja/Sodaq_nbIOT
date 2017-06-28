@@ -18,8 +18,8 @@
     <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _SODAQ_GSM_MODEM_h
-#define _SODAQ_GSM_MODEM_h
+#ifndef _SODAQ_AT_DEVICE_h
+#define _SODAQ_AT_DEVICE_h
 
 #include <Arduino.h>
 #include <stdint.h>
