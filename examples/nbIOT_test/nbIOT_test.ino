@@ -21,8 +21,12 @@
 #include "Sodaq_nbIOT.h"
 #include <Sodaq_wdt.h>
 
+#ifdef ARDUINO_SODAQ_EXPLORER
 #define MODEM_ON_OFF_PIN 7
 #define MODEM_STREAM Serial
+#else
+#error "You need to declare the modem on/off pin and stream for your particular board!"
+#endif
 
 #define DEBUG_STREAM SerialUSB
 #define DEBUG_STREAM_BAUD 115200

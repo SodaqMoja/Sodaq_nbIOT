@@ -61,8 +61,6 @@ class Sodaq_nbIOT: public Sodaq_AT_Device
     // Returns true if the modem is connected to the network and has an activated data connection.
     bool isConnected();
 
-    bool attachGprs(uint32_t timeout = 30 * 1000);
-
     // Gets the Received Signal Strength Indication in dBm and Bit Error Rate.
     // Returns true if successful.
     bool getRSSIAndBER(int8_t* rssi, uint8_t* ber);
@@ -146,6 +144,7 @@ class Sodaq_nbIOT: public Sodaq_AT_Device
     static bool isValidIPv4(const char* str);
 
     bool waitForSignalQuality(uint32_t timeout = 60L * 1000);
+    bool attachGprs(uint32_t timeout = 30 * 1000);
 
     static ResponseTypes _csqParser(ResponseTypes& response, const char* buffer, size_t size, int* rssi, int* ber);
     //static ResponseTypes _createSocketParser(ResponseTypes& response, const char* buffer, size_t size,
