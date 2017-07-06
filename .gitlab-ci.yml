@@ -1,0 +1,37 @@
+image: actinius/docker-arduino-ci:latest
+
+variables:
+  DOCKER_DRIVER: overlay
+  BINDIR: $CI_PROJECT_DIR/bin
+  JSONURL: http://downloads.sodaq.net/package_sodaq_samd_index.json
+  BOARD: SODAQ:samd:sodaq_explorer
+  EXAMPLE1: nbIOT_test
+
+stages:
+  - build_1_6_14
+
+before_script:
+  #- env
+  #- pwd
+  - cd ..
+  - rm -fr libraries
+  - mkdir -p libraries
+  - ln -s $CI_PROJECT_DIR libraries/
+  - arduino --pref sketchbook.path=$PWD --save-prefs
+  - arduino --pref compiler.warning_level=more --save-prefs
+  - arduino --pref boardsmanager.additional.urls=${JSONURL} --save-prefs
+  - arduino --install-library Sodaq_wdt
+
+build_1_6_14:
+  stage: build_1_6_14
+  artifacts:
+    paths:
+      - $BINDIR/${TARGET}*.bin
+  script:
+    #- env
+    #- pwd
+    - rm -rf ${BINDIR}
+    - mkdir ${BINDIR}
+    - arduino --install-boards "SODAQ:samd:1.6.14"
+    - arduino --pref build.path=${BINDIR} --verbose --verify --board ${BOARD} ${CI_PROJECT_NAME}/examples/${EXAMPLE1}/${EXAMPLE1}.ino
+    #- cp ${BINDIR}/${CI_PROJECT_NAME}.ino.bin ${BINDIR}/${CI_PROJECT_NAME}-1.7.0.bin
