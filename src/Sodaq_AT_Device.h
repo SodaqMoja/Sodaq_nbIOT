@@ -34,6 +34,7 @@ enum ResponseTypes {
     ResponsePrompt = 3,
     ResponseTimeout = 4,
     ResponseEmpty = 5,
+    ResponsePendingExtra = 6,
 };
 
 // IP type

@@ -72,6 +72,18 @@
 
 #define NOW (uint32_t)millis()
 
+typedef struct NameValuePair {
+    const char* Name;
+    const char* Value;
+} NameValuePair;
+
+const uint8_t nConfigCount = 3;
+static NameValuePair nConfig[nConfigCount] = {
+    { "AUTOCONNECT", "FALSE" },
+    { "CR_0354_0338_SCRAMBLING", "FALSE" },
+    { "CR_0859_SI_AVOID", "FALSE" }
+};
+
 class Sodaq_nbIotOnOff : public Sodaq_OnOffBee
 {
   public:
@@ -233,7 +245,7 @@ ResponseTypes Sodaq_nbIOT::readResponse(char* buffer, size_t size,
             if (parserMethod) {
                 ResponseTypes parserResponse = parserMethod(response, buffer, count, callbackParameter, callbackParameter2);
 
-                if (parserResponse != ResponseEmpty) {
+                if ((parserResponse != ResponseEmpty) && (parserResponse != ResponsePendingExtra)) {
                     return parserResponse;
                 }
                 else {
@@ -245,7 +257,10 @@ ResponseTypes Sodaq_nbIOT::readResponse(char* buffer, size_t size,
                 // Prevent calling the parser again.
                 // This could happen if the input line is too long. It will be split
                 // and the next readLn will return the next part.
-                parserMethod = 0;
+                // The case of "ResponsePendingExtra" is an exception to this, thus waiting for more replies to be parsed.
+                if (parserResponse != ResponsePendingExtra) {
+                    parserMethod = 0;
+                }
             }
 
             // at this point, the parserMethod has ran and there is no override response from it,
@@ -296,6 +311,16 @@ bool Sodaq_nbIOT::connect(const char* apn, const char* cdp, const char* forceOpe
         return false;
     }
 
+    if (!checkAndApplyNconfig()) {
+        return false;
+    }
+
+    reboot();
+
+    if (!on()) {
+        return false;
+    }
+
     if (!setApn(apn) || !setCdp(cdp)) {
         return false;
     }
@@ -329,6 +354,72 @@ bool Sodaq_nbIOT::connect(const char* apn, const char* cdp, const char* forceOpe
 
     // If we got this far we succeeded
     return true;
+}
+
+void Sodaq_nbIOT::reboot()
+{
+    println("AT+NRB");
+}
+
+bool Sodaq_nbIOT::checkAndApplyNconfig()
+{
+    bool applyParam[nConfigCount];
+
+    println("AT+NCONFIG?");
+
+    if (readResponse<bool, uint8_t>(_nconfigParser, applyParam, NULL) == ResponseOK) {
+        for (uint8_t i = 0; i < nConfigCount; i++)
+        {
+            debugPrint(nConfig[i].Name);
+            if (!applyParam[i]) {
+                debugPrintLn("... CHANGE");
+                setNconfigParam(nConfig[i].Name, nConfig[i].Value);
+            }
+            else {
+                debugPrintLn("... OK");
+            }
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
+bool Sodaq_nbIOT::setNconfigParam(const char* param, const char* value)
+{
+    print("AT+NCONFIG=");
+    print(param);
+    print(",");
+    println(value);
+
+    return readResponse() == ResponseOK;
+}
+
+ResponseTypes Sodaq_nbIOT::_nconfigParser(ResponseTypes& response, const char* buffer, size_t size, bool* nconfigEqualsArray, uint8_t* dummy)
+{
+    if (!nconfigEqualsArray) {
+        return ResponseError;
+    }
+
+    char name[32];
+    char value[32];
+    if (sscanf(buffer, "+NCONFIG: %[^,],%[^\r]", name, value) == 2) {
+        for (uint8_t i = 0; i < nConfigCount; i++)
+        {
+            if (strcmp(nConfig[i].Name, name) == 0) {
+                if (strcmp(nConfig[i].Value, value) == 0) {
+                    nconfigEqualsArray[i] = true;
+
+                    break;
+                }
+            }
+        }
+
+        return ResponsePendingExtra;
+    }
+
+    return ResponseError;
 }
 
 bool Sodaq_nbIOT::attachGprs(uint32_t timeout)

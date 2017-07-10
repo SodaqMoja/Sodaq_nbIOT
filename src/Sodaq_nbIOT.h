@@ -145,12 +145,16 @@ class Sodaq_nbIOT: public Sodaq_AT_Device
 
     bool waitForSignalQuality(uint32_t timeout = 60L * 1000);
     bool attachGprs(uint32_t timeout = 30 * 1000);
+    bool setNconfigParam(const char* param, const char* value);
+    bool checkAndApplyNconfig();
+    void reboot();
 
     static ResponseTypes _csqParser(ResponseTypes& response, const char* buffer, size_t size, int* rssi, int* ber);
     //static ResponseTypes _createSocketParser(ResponseTypes& response, const char* buffer, size_t size,
     //        uint8_t* socket, uint8_t* dummy);
     static ResponseTypes _nqmgsParser(ResponseTypes& response, const char* buffer, size_t size, uint16_t* pendingCount, uint16_t* errorCount);
     static ResponseTypes _cgattParser(ResponseTypes& response, const char* buffer, size_t size, uint8_t* result, uint8_t* dummy);
+    static ResponseTypes _nconfigParser(ResponseTypes& response, const char* buffer, size_t size, bool* nconfigEqualsArray, uint8_t* dummy);
 };
 
 #endif
