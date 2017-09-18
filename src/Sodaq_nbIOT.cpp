@@ -108,7 +108,7 @@ static inline bool is_timedout(uint32_t from, uint32_t nr_ms)
 Sodaq_nbIOT::Sodaq_nbIOT() :
     _lastRSSI(0),
     _CSQtime(0),
-    _minRSSI(-93) // -93 dBm
+    _minRSSI(-113) // dBm
 {
 
 }
