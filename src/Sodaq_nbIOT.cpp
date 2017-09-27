@@ -333,8 +333,8 @@ bool Sodaq_nbIOT::connect(const char* apn, const char* cdp, const char* forceOpe
     if (!setRadioActive(true)) {
         return false;
     }
-
-    if (forceOperator) {
+    
+    if (forceOperator && forceOperator[0] != '\0') {
         print("AT+COPS=1,2,\"");
         print(forceOperator);
         println("\"");
