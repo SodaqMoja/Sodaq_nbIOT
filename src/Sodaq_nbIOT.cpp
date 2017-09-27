@@ -359,6 +359,10 @@ bool Sodaq_nbIOT::connect(const char* apn, const char* cdp, const char* forceOpe
 void Sodaq_nbIOT::reboot()
 {
     println("AT+NRB");
+
+    // wait up to 2000ms for the modem to come up
+    uint32_t start = millis();
+    while ((readResponse() != ResponseOK) && !is_timedout(start, 2000)) { }
 }
 
 bool Sodaq_nbIOT::checkAndApplyNconfig()
