@@ -333,8 +333,8 @@ bool Sodaq_nbIOT::connect(const char* apn, const char* cdp, const char* forceOpe
     if (!setRadioActive(true)) {
         return false;
     }
-
-    if (forceOperator) {
+    
+    if (forceOperator && forceOperator[0] != '\0') {
         print("AT+COPS=1,2,\"");
         print(forceOperator);
         println("\"");
@@ -359,6 +359,10 @@ bool Sodaq_nbIOT::connect(const char* apn, const char* cdp, const char* forceOpe
 void Sodaq_nbIOT::reboot()
 {
     println("AT+NRB");
+
+    // wait up to 2000ms for the modem to come up
+    uint32_t start = millis();
+    while ((readResponse() != ResponseOK) && !is_timedout(start, 2000)) { }
 }
 
 bool Sodaq_nbIOT::checkAndApplyNconfig()
@@ -487,7 +491,7 @@ bool Sodaq_nbIOT::attachGprs(uint32_t timeout)
 // Disconnects the modem from the network.
 bool Sodaq_nbIOT::disconnect()
 {
-    println("AT+CGATT=1");
+    println("AT+CGATT=0");
 
     return (readResponse(NULL, 40000) == ResponseOK);
 }
