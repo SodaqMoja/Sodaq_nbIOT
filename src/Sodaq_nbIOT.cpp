@@ -491,7 +491,7 @@ bool Sodaq_nbIOT::attachGprs(uint32_t timeout)
 // Disconnects the modem from the network.
 bool Sodaq_nbIOT::disconnect()
 {
-    println("AT+CGATT=1");
+    println("AT+CGATT=0");
 
     return (readResponse(NULL, 40000) == ResponseOK);
 }
