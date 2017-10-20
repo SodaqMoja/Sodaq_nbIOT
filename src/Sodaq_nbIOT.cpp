@@ -294,8 +294,9 @@ bool Sodaq_nbIOT::setApn(const char* apn)
 
 bool Sodaq_nbIOT::setCdp(const char* cdp)
 {
-    print("AT+NCDP=");
-    println(cdp);
+    print("AT+NCDP=\"");
+    print(cdp);
+    println("\"");
 
     return (readResponse() == ResponseOK);
 }
@@ -392,10 +393,11 @@ bool Sodaq_nbIOT::checkAndApplyNconfig()
 
 bool Sodaq_nbIOT::setNconfigParam(const char* param, const char* value)
 {
-    print("AT+NCONFIG=");
+    print("AT+NCONFIG=\"");
     print(param);
-    print(",");
-    println(value);
+    print("\",\"");
+    print(value);
+    println("\"");
 
     return readResponse() == ResponseOK;
 }
@@ -684,14 +686,14 @@ bool Sodaq_nbIOT::sendMessage(const uint8_t* buffer, size_t size)
 
     print("AT+NMGS=");
     print(size);
-    print(",");
+    print(",\"");
 
     for (uint16_t i = 0; i < size; ++i) {
         print(static_cast<char>(NIBBLE_TO_HEX_CHAR(HIGH_NIBBLE(buffer[i]))));
         print(static_cast<char>(NIBBLE_TO_HEX_CHAR(LOW_NIBBLE(buffer[i]))));
     }
 
-    println();
+    println("\"");
 
     return (readResponse() == ResponseOK);
 }
