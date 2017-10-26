@@ -301,12 +301,22 @@ bool Sodaq_nbIOT::setCdp(const char* cdp)
     return (readResponse() == ResponseOK);
 }
 
+void Sodaq_nbIOT::purgeAllResponsesRead()
+{
+    uint32_t start = millis();
+
+    // make sure all the responses within the timeout have been read
+    while ((readResponse(0, 1000) != ResponseTimeout) && !is_timedout(start, 2000)) {}
+}
+
 // Turns on and initializes the modem, then connects to the network and activates the data connection.
 bool Sodaq_nbIOT::connect(const char* apn, const char* cdp, const char* forceOperator)
 {
     if (!on()) {
         return false;
     }
+
+    purgeAllResponsesRead();
 
     if (!setRadioActive(false)) {
         return false;
@@ -321,6 +331,8 @@ bool Sodaq_nbIOT::connect(const char* apn, const char* cdp, const char* forceOpe
     if (!on()) {
         return false;
     }
+
+    purgeAllResponsesRead();
 
     if (!setApn(apn) || !setCdp(cdp)) {
         return false;
