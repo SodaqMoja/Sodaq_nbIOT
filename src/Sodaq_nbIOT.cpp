@@ -410,7 +410,7 @@ ResponseTypes Sodaq_nbIOT::_nconfigParser(ResponseTypes& response, const char* b
 
     char name[32];
     char value[32];
-    if (sscanf(buffer, "+NCONFIG: %[^,],%[^\r]", name, value) == 2) {
+    if (sscanf(buffer, "+NCONFIG: \"%[^\"]\",\"%[^\"]\"", name, value) == 2) {
         for (uint8_t i = 0; i < nConfigCount; i++)
         {
             if (strcmp(nConfig[i].Name, name) == 0) {
