@@ -368,6 +368,12 @@ bool Sodaq_nbIOT::connect(const char* apn, const char* cdp, const char* forceOpe
         return false;
     }
 
+    #ifdef DEBUG
+    println("AT+CPSMS?");
+    readResponse();
+    readResponse();
+    #endif
+
     // If we got this far we succeeded
     return true;
 }
