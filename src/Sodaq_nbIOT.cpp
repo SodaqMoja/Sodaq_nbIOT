@@ -455,11 +455,14 @@ bool Sodaq_nbIOT::attachGprs(uint32_t timeout)
     uint32_t delay_count = 500;
 
     while (!is_timedout(start, timeout)) {
-        println("AT+CGATT=1");
-
-        if (readResponse() == ResponseOK) {
+        if (isConnected()) {
             return true;
         }
+        //println("AT+CGATT=1");
+
+        //if (readResponse() == ResponseOK) {
+        //    return true;
+        //}
 
         sodaq_wdt_safe_delay(delay_count);
 
