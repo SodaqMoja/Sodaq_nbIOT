@@ -117,6 +117,7 @@ class Sodaq_nbIOT: public Sodaq_AT_Device
                             (void*)callbackParameter, (void*)callbackParameter2, outSize, timeout);
     };
 
+    void purgeAllResponsesRead();
   private:
     //uint16_t _socketPendingBytes[SOCKET_COUNT]; // TODO add getter
     //bool _socketClosedBit[SOCKET_COUNT];

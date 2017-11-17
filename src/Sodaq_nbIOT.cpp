@@ -77,11 +77,14 @@ typedef struct NameValuePair {
     const char* Value;
 } NameValuePair;
 
-const uint8_t nConfigCount = 3;
+const uint8_t nConfigCount = 6;
 static NameValuePair nConfig[nConfigCount] = {
     { "AUTOCONNECT", "FALSE" },
     { "CR_0354_0338_SCRAMBLING", "FALSE" },
-    { "CR_0859_SI_AVOID", "FALSE" }
+    { "CR_0859_SI_AVOID", "FALSE" },
+    { "COMBINE_ATTACH" , "FALSE" },
+    { "CELL_RESELECTION" , "FALSE" },
+    { "ENABLE_BIP" , "FALSE" },
 };
 
 class Sodaq_nbIotOnOff : public Sodaq_OnOffBee
@@ -301,12 +304,22 @@ bool Sodaq_nbIOT::setCdp(const char* cdp)
     return (readResponse() == ResponseOK);
 }
 
+void Sodaq_nbIOT::purgeAllResponsesRead()
+{
+    uint32_t start = millis();
+
+    // make sure all the responses within the timeout have been read
+    while ((readResponse(0, 1000) != ResponseTimeout) && !is_timedout(start, 2000)) {}
+}
+
 // Turns on and initializes the modem, then connects to the network and activates the data connection.
 bool Sodaq_nbIOT::connect(const char* apn, const char* cdp, const char* forceOperator)
 {
     if (!on()) {
         return false;
     }
+
+    purgeAllResponsesRead();
 
     if (!setRadioActive(false)) {
         return false;
@@ -321,6 +334,8 @@ bool Sodaq_nbIOT::connect(const char* apn, const char* cdp, const char* forceOpe
     if (!on()) {
         return false;
     }
+
+    purgeAllResponsesRead();
 
     if (!setApn(apn) || !setCdp(cdp)) {
         return false;
@@ -352,6 +367,12 @@ bool Sodaq_nbIOT::connect(const char* apn, const char* cdp, const char* forceOpe
     if (!attachGprs()) {
         return false;
     }
+
+    #ifdef DEBUG
+    println("AT+CPSMS?");
+    readResponse();
+    readResponse();
+    #endif
 
     // If we got this far we succeeded
     return true;
@@ -410,7 +431,7 @@ ResponseTypes Sodaq_nbIOT::_nconfigParser(ResponseTypes& response, const char* b
 
     char name[32];
     char value[32];
-    if (sscanf(buffer, "+NCONFIG: %[^,],%[^\r]", name, value) == 2) {
+    if (sscanf(buffer, "+NCONFIG: \"%[^\"]\",\"%[^\"]\"", name, value) == 2) {
         for (uint8_t i = 0; i < nConfigCount; i++)
         {
             if (strcmp(nConfig[i].Name, name) == 0) {
@@ -434,11 +455,14 @@ bool Sodaq_nbIOT::attachGprs(uint32_t timeout)
     uint32_t delay_count = 500;
 
     while (!is_timedout(start, timeout)) {
-        println("AT+CGATT=1");
-
-        if (readResponse() == ResponseOK) {
+        if (isConnected()) {
             return true;
         }
+        //println("AT+CGATT=1");
+
+        //if (readResponse() == ResponseOK) {
+        //    return true;
+        //}
 
         sodaq_wdt_safe_delay(delay_count);
 
