@@ -2,6 +2,10 @@
 
 Arduino library for using with the uBlox nbIOT modules.
 
+The firmware version of the module should be >= 06.57,A03.02. 
+
+Please check http://support.sodaq.com/sodaq-one/firmware-upgrade/ for the latest firmware.
+
 ## Usage
 
 Quick example:
