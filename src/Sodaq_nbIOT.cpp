@@ -126,7 +126,7 @@ bool Sodaq_nbIOT::isAlive()
 }
 
 // Initializes the modem instance. Sets the modem stream and the on-off power pins.
-void Sodaq_nbIOT::init(Stream& stream, int8_t onoffPin)
+void Sodaq_nbIOT::init(Stream& stream, int8_t onoffPin, int8_t txEnablePin)
 {
     debugPrintLn("[init] started.");
 
@@ -136,6 +136,8 @@ void Sodaq_nbIOT::init(Stream& stream, int8_t onoffPin)
 
     sodaq_nbIotOnOff.init(onoffPin);
     _onoff = &sodaq_nbIotOnOff;
+
+    setTxEnablePin(txEnablePin);
 }
 
 bool Sodaq_nbIOT::setRadioActive(bool on)

@@ -78,6 +78,9 @@ class Sodaq_AT_Device
     void enableBaudrateChange(BaudRateChangeCallbackPtr callback) { _baudRateChangeCallbackPtr = callback; };
 
   protected:
+    // the (optional) tx enable pin.
+    int8_t _txEnablePin;
+
     // The stream that communicates with the device.
     Stream* _modemStream;
 
@@ -121,6 +124,9 @@ class Sodaq_AT_Device
     // Sets the modem stream.
     void setModemStream(Stream& stream);
 
+    // Sets the optional tx enable pin.
+    void setTxEnablePin(int8_t txEnablePin);
+
     // Returns a character from the modem stream if read within _timeout ms or -1 otherwise.
     int timedRead(uint32_t timeout = 1000) const;
 
@@ -148,7 +154,10 @@ class Sodaq_AT_Device
     // Write a byte
     size_t writeByte(uint8_t value);
 
-    // Write the command prolog (just for debugging
+    // Enables or disables the tx power pin, if that is available (!=-1)
+    void setTxPowerIfAvailable(bool on);
+
+    // Write the command prolog (just for debugging and/or enabling tx power)
     void writeProlog();
 
     size_t print(const __FlashStringHelper*);
