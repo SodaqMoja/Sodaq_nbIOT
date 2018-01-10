@@ -22,13 +22,41 @@
 #include <Sodaq_wdt.h>
 
 #ifdef ARDUINO_SODAQ_EXPLORER
+/* SODAQ Explorer + SODAQ NB-IoT Shield */
+#define DEBUG_STREAM SerialUSB
 #define MODEM_ON_OFF_PIN 7
 #define MODEM_STREAM Serial
+
+#elif defined(ARDUINO_SAM_ZERO)
+/* Arduino Zero / M0 + SODAQ NB-IoT Shield */
+#define DEBUG_STREAM SerialUSB
+#define MODEM_STREAM Serial1
+#define MODEM_ON_OFF_PIN 7 
+
+#elif defined(ARDUINO_AVR_LEONARDO)
+/* Arduino Leonardo + SODAQ NB-IoT Shield */
+#define DEBUG_STREAM Serial 
+#define MODEM_STREAM Serial1
+#define MODEM_ON_OFF_PIN 7
+
+#elif defined(ARDUINO_SODAQ_AUTONOMO)
+/* SODAQ AUTONOMO + SODAQ NB-IoT Bee */
+#define DEBUG_STREAM SerialUSB
+#define MODEM_STREAM Serial1
+#define MODEM_ON_OFF_PIN BEE_VCC
+#define MODEM_DTR BEEDTR
+
+#elif defined(ARDUINO_AVR_SODAQ_MBILI)
+/* SODAQ MBILI + SODAQ NB-IoT Bee */
+#define DEBUG_STREAM Serial
+#define MODEM_STREAM Serial1
+#define MODEM_DTR BEEDTR
+
 #else
 #error "You need to declare the modem on/off pin and stream for your particular board!"
 #endif
 
-#define DEBUG_STREAM SerialUSB
+
 #define DEBUG_STREAM_BAUD 115200
 
 #define STARTUP_DELAY 5000
@@ -49,6 +77,12 @@ void setup()
     MODEM_STREAM.begin(nbiot.getDefaultBaudrate());
 
     DEBUG_STREAM.print("Initializing and connecting... ");
+
+#ifdef MODEM_DTR
+    // Set state to active
+    pinMode(MODEM_DTR, OUTPUT);
+    digitalWrite(MODEM_DTR, HIGH);
+#endif // MODEM_DTR
 
     nbiot.init(MODEM_STREAM, MODEM_ON_OFF_PIN);
     nbiot.setDiag(DEBUG_STREAM);
