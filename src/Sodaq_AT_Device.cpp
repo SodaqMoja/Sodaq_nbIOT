@@ -89,6 +89,8 @@ bool Sodaq_AT_Device::on()
         return false;
     }
 
+    setTxPowerIfAvailable(true);
+
     return isOn(); // this essentially means isOn() && isAlive()
 }
 
@@ -99,6 +101,8 @@ bool Sodaq_AT_Device::off()
     if (_onoff) {
         _onoff->off();
     }
+
+    setTxPowerIfAvailable(false);
 
     return !isOn();
 }
@@ -124,8 +128,6 @@ void Sodaq_AT_Device::setTxPowerIfAvailable(bool on)
 void Sodaq_AT_Device::writeProlog()
 {
     if (!_appendCommand) {
-        setTxPowerIfAvailable(true);
-
         debugPrint(">> ");
         _appendCommand = true;
     }
@@ -278,8 +280,6 @@ size_t Sodaq_AT_Device::println(void)
     debugPrintLn();
     size_t i = print('\r');
     _appendCommand = false;
-    setTxPowerIfAvailable(false);
-
     return i;
 }
 
