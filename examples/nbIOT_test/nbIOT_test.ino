@@ -52,6 +52,13 @@
 #define MODEM_STREAM Serial1
 #define MODEM_DTR BEEDTR
 
+#elif defined(ARDUINO_SODAQ_SARA)
+/* SODAQ SARA */
+#define DEBUG_STREAM SerialUSB
+#define MODEM_STREAM Serial1
+#define MODEM_ON_OFF_PIN UBLOX_ENABLE
+#define MODEM_DTR TX_PWR_GATE
+
 #else
 #error "You need to declare the modem on/off pin and stream for your particular board!"
 #endif
