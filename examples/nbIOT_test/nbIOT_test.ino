@@ -56,8 +56,8 @@
 /* SODAQ SARA */
 #define DEBUG_STREAM SerialUSB
 #define MODEM_STREAM Serial1
-#define MODEM_ON_OFF_PIN UBLOX_ENABLE
-#define MODEM_DTR TX_PWR_GATE
+#define MODEM_ON_OFF_PIN SARA_ENABLE
+#define MODEM_DTR SARA_TX_ENABLE
 
 #else
 #error "You need to declare the modem on/off pin and stream for your particular board!"
