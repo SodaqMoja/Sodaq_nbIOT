@@ -31,6 +31,13 @@
 #define MODEM_STREAM Serial1
 #define enablePin BEEDTR
 
+#elif defined(ARDUINO_SODAQ_SARA)
+/* SODAQ SARA */
+#define DEBUG_STREAM SerialUSB
+#define MODEM_STREAM Serial1
+#define powerPin TX_PWR_GATE
+#define enablePin UBLOX_ENABLE
+
 #else
 #error "Please use one of the listed boards or add your board."
 #endif
