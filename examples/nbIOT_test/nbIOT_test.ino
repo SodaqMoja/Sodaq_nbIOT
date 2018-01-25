@@ -94,6 +94,34 @@ void setup()
     nbiot.init(MODEM_STREAM, MODEM_ON_OFF_PIN);
     nbiot.setDiag(DEBUG_STREAM);
 
+    connectModem();
+}
+
+void loop()
+{
+    if (nbiot.isConnected()) {
+        const char* message = "Hello World!";
+        DEBUG_STREAM.print("Sending message: \"");
+        DEBUG_STREAM.print(message);
+        DEBUG_STREAM.print("\"... ");
+
+        if (!nbiot.sendMessage(message)) {
+            DEBUG_STREAM.println("Could not queue message!");
+        }
+        else {
+            DEBUG_STREAM.println("Message queued for transmission!");
+        }
+
+        showMessageCountFromModem();
+    }
+    else {
+        connectModem();
+    }
+
+    sodaq_wdt_safe_delay(5000);
+}
+
+void connectModem() {
     if (nbiot.connect(apn, cdp, forceOperator)) {
         DEBUG_STREAM.println("Connected succesfully!");
     }
@@ -101,29 +129,6 @@ void setup()
         DEBUG_STREAM.println("Failed to connect!");
         return;
     }
-
-    showMessageCountFromModem();
-
-    const char* message = "Hello World!";
-    DEBUG_STREAM.print("Sending message: \"");
-    DEBUG_STREAM.print(message);
-    DEBUG_STREAM.print("\"... ");
-
-    if (!nbiot.sendMessage(message)) {
-        DEBUG_STREAM.println("Could not queue message!");
-    }
-    else {
-        DEBUG_STREAM.println("Message queued for transmission!");
-    }
-}
-
-void loop()
-{
-    if (nbiot.isConnected()) {
-        showMessageCountFromModem();
-    }
-
-    sodaq_wdt_safe_delay(5000);
 }
 
 void showMessageCountFromModem()
