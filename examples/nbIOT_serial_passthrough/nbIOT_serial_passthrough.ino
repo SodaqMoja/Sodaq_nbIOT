@@ -35,8 +35,8 @@
 /* SODAQ SARA */
 #define DEBUG_STREAM SerialUSB
 #define MODEM_STREAM Serial1
-#define powerPin TX_PWR_GATE
-#define enablePin UBLOX_ENABLE
+#define powerPin SARA_ENABLE
+#define enablePin SARA_TX_ENABLE
 
 #else
 #error "Please use one of the listed boards or add your board."
