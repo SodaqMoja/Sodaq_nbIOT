@@ -49,6 +49,7 @@
 
 // Constructor
 Sodaq_AT_Device::Sodaq_AT_Device() :
+    _txEnablePin(-1),
     _modemStream(0),
     _diagStream(0),
     _disableDiag(false),
@@ -88,6 +89,8 @@ bool Sodaq_AT_Device::on()
         return false;
     }
 
+    setTxPowerIfAvailable(true);
+
     return isOn(); // this essentially means isOn() && isAlive()
 }
 
@@ -98,6 +101,8 @@ bool Sodaq_AT_Device::off()
     if (_onoff) {
         _onoff->off();
     }
+
+    setTxPowerIfAvailable(false);
 
     return !isOn();
 }
@@ -111,6 +116,13 @@ bool Sodaq_AT_Device::isOn() const
 
     // No onoff. Let's assume it is on.
     return true;
+}
+
+void Sodaq_AT_Device::setTxPowerIfAvailable(bool on)
+{
+    if (_txEnablePin != -1) {
+        digitalWrite(_txEnablePin, on);
+    }
 }
 
 void Sodaq_AT_Device::writeProlog()
@@ -289,6 +301,17 @@ void Sodaq_AT_Device::initBuffer()
 void Sodaq_AT_Device::setModemStream(Stream& stream)
 {
     this->_modemStream = &stream;
+}
+
+// Sets the optional tx enable pin.
+void Sodaq_AT_Device::setTxEnablePin(int8_t txEnablePin)
+{
+    _txEnablePin = txEnablePin;
+
+    if (_txEnablePin != -1) {
+        pinMode(_txEnablePin, OUTPUT);
+        digitalWrite(_txEnablePin, LOW);
+    }
 }
 
 // Returns a character from the modem stream if read within _timeout ms or -1 otherwise.

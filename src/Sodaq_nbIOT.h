@@ -50,7 +50,7 @@ class Sodaq_nbIOT: public Sodaq_AT_Device
     uint32_t getDefaultBaudrate() { return 9600; };
 
     // Initializes the modem instance. Sets the modem stream and the on-off power pins.
-    void init(Stream& stream, int8_t onoffPin);
+    void init(Stream& stream, int8_t onoffPin, int8_t txEnablePin = -1);
 
     // Turns on and initializes the modem, then connects to the network and activates the data connection.
     bool connect(const char* apn, const char* cdp, const char* forceOperator = 0);
