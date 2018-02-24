@@ -203,41 +203,18 @@ ResponseTypes Sodaq_nbIOT::readResponse(char* buffer, size_t size,
             debugPrint("[rdResp]: ");
             debugPrintLn(buffer);
 
-            // TODO handle socket URC
-
-            //int param1, param2;
-            //if (sscanf(buffer, "+UUSORD: %d,%d", &param1, &param2) == 2) {
-            //    uint16_t socket_nr = param1;
-            //    uint16_t nr_bytes = param2;
-            //    debugPrint("Unsolicited: Socket ");
-            //    debugPrint(socket_nr);
-            //    debugPrint(": ");
-            //    debugPrint(param2);
-            //    debugPrintLn(" bytes pending");
-            //    if (socket_nr < ARRAY_SIZE(_socketPendingBytes)) {
-            //        _socketPendingBytes[socket_nr] = nr_bytes;
-            //    }
-            //    continue;
-            //}
-            //else if (sscanf(buffer, "+UUSOCL: %d", &param1) == 1) {
-            //    uint16_t socket_nr = param1;
-            //    if (socket_nr < ARRAY_SIZE(_socketPendingBytes)) {
-            //        debugPrint("Unsolicited: Socket ");
-            //        debugPrint(socket_nr);
-            //        debugPrint(": ");
-            //        debugPrintLn("closed by remote");
-
-            //        _socketClosedBit[socket_nr] = true;
-            //        if (socket_nr == _openTCPsocket) {
-            //            _openTCPsocket = -1;
-            //            // Report this other software layers
-            //            if (_tcpClosedHandler) {
-            //                _tcpClosedHandler();
-            //            }
-            //        }
-            //    }
-            //    continue;
-            //}
+            int socketID;
+            int dataLength;
+            
+            // Handle socket URC
+            if (sscanf(buffer, "+NSONMI: %d,%d", &socketID, &dataLength) == 2) {
+                debugPrint("Unsolicited: Socket ");
+                debugPrint(socketID);
+                debugPrint(": ");
+                debugPrintLn(dataLength);
+                _receivedUDPResponseSocket = socketID;
+                _pendingUDPBytes = dataLength;
+            }
 
             if (startsWith(STR_AT, buffer)) {
                 continue; // skip echoed back command
