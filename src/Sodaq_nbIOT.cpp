@@ -308,7 +308,7 @@ void Sodaq_nbIOT::purgeAllResponsesRead()
 }
 
 // Turns on and initializes the modem, then connects to the network and activates the data connection.
-bool Sodaq_nbIOT::connect(const char* apn, const char* cdp, const char* forceOperator)
+bool Sodaq_nbIOT::connect(const char* apn, const char* cdp, const char* band, const char* forceOperator)
 {
     if (!on()) {
         return false;
@@ -316,13 +316,10 @@ bool Sodaq_nbIOT::connect(const char* apn, const char* cdp, const char* forceOpe
 
     purgeAllResponsesRead();
 
-    if (!setRadioActive(false)) {
+    if (!setBand(band)) {
         return false;
     }
 
-    if (!checkAndApplyNconfig()) {
-        return false;
-    }
 
     reboot();
 
@@ -330,9 +327,20 @@ bool Sodaq_nbIOT::connect(const char* apn, const char* cdp, const char* forceOpe
         return false;
     }
 
+    if (!checkAndApplyNconfig()) {
+        return false;
+    }
+
     purgeAllResponsesRead();
 
-    if (!setApn(apn) || !setCdp(cdp)) {
+#ifdef DEBUG
+    println("AT+NBAND?");
+    readResponse();
+    println("AT+NCONFIG?");
+    readResponse();
+#endif
+
+    if (!setRadioActive(false)) {
         return false;
     }
 
@@ -341,6 +349,10 @@ bool Sodaq_nbIOT::connect(const char* apn, const char* cdp, const char* forceOpe
         return false;
     }
 
+    if (!setApn(apn) || !setCdp(cdp)) {
+        return false;
+    }
+    
     if (!setRadioActive(true)) {
         return false;
     }
@@ -359,10 +371,15 @@ bool Sodaq_nbIOT::connect(const char* apn, const char* cdp, const char* forceOpe
         return false;
     }
 
+    setVerboseErrors(true);
+    
     if (!attachGprs()) {
         return false;
     }
 
+    println("AT+CGPADDR");
+    readResponse();
+    
     #ifdef DEBUG
     println("AT+CPSMS?");
     readResponse();
