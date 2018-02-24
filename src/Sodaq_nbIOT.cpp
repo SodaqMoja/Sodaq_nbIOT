@@ -148,6 +148,14 @@ bool Sodaq_nbIOT::setRadioActive(bool on)
     return (readResponse() == ResponseOK);
 }
 
+bool Sodaq_nbIOT::setVerboseErrors(bool on)
+{
+    print("AT+CMEE=");
+    println(on ? "1" : "0"); // 2 is not supported on the n2, according to AT command manual
+    
+    return (readResponse() == ResponseOK);
+}
+
 bool Sodaq_nbIOT::setIndicationsActive(bool on)
 {
     print("AT+NSMI=");
@@ -303,6 +311,14 @@ bool Sodaq_nbIOT::setCdp(const char* cdp)
     print(cdp);
     println("\"");
 
+    return (readResponse() == ResponseOK);
+}
+
+bool Sodaq_nbIOT::setBand(const char* band)
+{
+    print("AT+NBAND=");
+    println(band);
+    
     return (readResponse() == ResponseOK);
 }
 

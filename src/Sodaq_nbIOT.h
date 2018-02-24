@@ -38,12 +38,14 @@ class Sodaq_nbIOT: public Sodaq_AT_Device
             void* parameter, void* parameter2);
 
     bool setRadioActive(bool on);
-    bool setIndicationsActive(bool on);
-    bool setApn(const char* apn);
-    bool setCdp(const char* cdp);
-
-    // Returns true if the modem replies to "AT" commands without timing out.
-    bool isAlive();
+        bool setIndicationsActive(bool on);
+        bool setApn(const char* apn);
+        bool setCdp(const char* cdp);
+        bool setBand(const char* band);
+        bool setVerboseErrors(bool on);
+        
+        // Returns true if the modem replies to "AT" commands without timing out.
+        bool isAlive();
 
     // Returns the default baud rate of the modem.
     // To be used when initializing the modem stream for the first time.
