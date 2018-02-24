@@ -493,44 +493,203 @@ bool Sodaq_nbIOT::attachGprs(uint32_t timeout)
     return false;
 }
 
-//int Sodaq_nbIOT::createSocket(uint16_t localPort)
-//{
-//    // only Datagram/UDP is supported
-//    print("AT+NSOCR=DGRAM,17,");
-//    print(localPort);
-//    print(",1"); // enable incoming message URC (NSONMI)
-//
-//    uint8_t socket;
-//
-//    if (readResponse<uint8_t, uint8_t>(_createSocketParser, &socket, NULL) == ResponseOK) {
-//        return socket;
-//    }
-//
-//    return SOCKET_FAIL;
-//}
-//
-//ResponseTypes Sodaq_nbIOT::_createSocketParser(ResponseTypes& response, const char* buffer, size_t size,
-//        uint8_t* socket, uint8_t* dummy)
-//{
-//    if (!socket) {
-//        return ResponseError;
-//    }
-//
-//    int value;
-//
-//    if (sscanf(buffer, "%d", &value) == 1) {
-//        *socket = value;
-//
-//        return ResponseEmpty;
-//    }
-//
-//    return ResponseError;
-//}
+int Sodaq_nbIOT::createSocket(uint16_t localPort)
+{
+    purgeAllResponsesRead();
+    // only Datagram/UDP is supported
+    print("AT+NSOCR=\"DGRAM\",17,");
+    print(localPort);
+    println(",1");
 
-//bool connectSocket(uint8_t socket, const char* host, uint16_t port)
-//{
-//    return false;
-//}
+    uint8_t socket;
+    
+    if (readResponse<uint8_t, uint8_t>(_createSocketParser, &socket, NULL) == ResponseOK) {
+        return socket;
+    }
+    
+    return SOCKET_FAIL;
+}
+
+bool Sodaq_nbIOT::closeSocket(uint8_t socketID)
+{
+    // only Datagram/UDP is supported
+    print("AT+NSOCL=");
+    println(socketID);
+    
+    return readResponse() == ResponseOK;
+}
+
+int Sodaq_nbIOT::ping(char* ip)
+{
+    print("AT+NPING=");
+    print("\"");
+    print(ip);
+    println("\"");
+    
+    return readResponse() == ResponseOK;
+}
+
+int Sodaq_nbIOT::socketSend(uint8_t socket, const char* remoteIP, const uint16_t remotePort, char* buffer, size_t size)
+{
+    if (size > 512) {
+        debugPrintLn("SocketSend exceeded maximum buffer size!");
+        return -1;
+    }
+    
+    // only Datagram/UDP is supported
+    print("AT+NSOST=");
+    print(socket);
+    print(',');
+    print('\"');
+    print(remoteIP);
+    print('\"');
+    print(',');
+    print(remotePort);
+    print(',');
+    print(size);
+    print(',');
+    print('\"');
+    print(buffer);
+    println('\"');
+    
+    uint8_t retSocketID;
+    uint8_t sentLength;
+    
+    if (readResponse<uint8_t, uint8_t>(_sendSocketParser, &retSocketID, &sentLength) == ResponseOK) {
+        return socket;
+    }
+    
+    return sentLength;
+}
+
+bool Sodaq_nbIOT::waitForUDPResponse(uint32_t timeoutMS)
+{
+    if (hasPendingUDPBytes()) { return true; }
+    
+    uint32_t startTime = millis();
+    
+    while (!hasPendingUDPBytes() && (millis() - startTime) < timeoutMS) {
+        isAlive();
+        sodaq_wdt_safe_delay(10);
+    }
+    
+    return hasPendingUDPBytes();
+}
+
+size_t Sodaq_nbIOT::getPendingUDPBytes()
+{
+    return _pendingUDPBytes;
+}
+
+bool Sodaq_nbIOT::hasPendingUDPBytes()
+{
+    return _pendingUDPBytes > 0;
+}
+
+size_t Sodaq_nbIOT::socketReceive(SaraN2UDPPacketMetadata* packet, char* buffer, size_t size)
+{
+    if (_pendingUDPBytes == 0) {
+        // no URC has happened, no socket to read
+        debugPrintLn("Reading from socket without URC!");
+        return 0;
+    }
+    
+    print("AT+NSORF=");
+    print(_receivedUDPResponseSocket);
+    print(',');
+    println(size);
+    
+    if (readResponse<SaraN2UDPPacketMetadata, char>(_udpURCParser, packet, buffer) == ResponseOK) {
+        // update pending bytes
+        _pendingUDPBytes -= packet->length;
+        return packet->length;
+    }
+    
+    debugPrintLn("Reading from socket failed!");
+    return 0;
+}
+
+size_t Sodaq_nbIOT::socketReceiveHex(char* buffer, size_t length, SaraN2UDPPacketMetadata* p)
+{
+    SaraN2UDPPacketMetadata packet;
+
+    int size = min(length / 2, _pendingUDPBytes);
+    return socketReceive(p ? p : &packet, buffer, size);
+}
+
+size_t Sodaq_nbIOT::socketReceiveBytes(uint8_t* buffer, size_t length, SaraN2UDPPacketMetadata* p)
+{
+    int size = min(length, min(MAX_UDP_BUFFER, _pendingUDPBytes));
+
+    SaraN2UDPPacketMetadata packet;
+    char tempBuffer[MAX_UDP_BUFFER];
+
+    size_t receivedSize = socketReceive(p ? p : &packet, tempBuffer, size);
+
+    if (buffer && length > 0) {
+        for (int i = 0; i < receivedSize; i += 2) {
+            buffer[i / 2] = HEX_PAIR_TO_BYTE(tempBuffer[i], tempBuffer[i + 1]);
+        }
+    }
+    
+    return receivedSize;
+}
+
+ResponseTypes Sodaq_nbIOT::_createSocketParser(ResponseTypes& response, const char* buffer, size_t size,
+        uint8_t* socket, uint8_t* dummy)
+{
+    if (!socket) {
+        return ResponseError;
+    }
+    
+    int value;
+    
+    if (sscanf(buffer, "%d", &value) == 1) {
+        *socket = value;
+        
+        return ResponseEmpty;
+    }
+    
+    return ResponseError;
+}
+
+ResponseTypes Sodaq_nbIOT::_sendSocketParser(ResponseTypes& response, const char* buffer, size_t size,
+        uint8_t* socket, uint8_t* length)
+{
+    if (!socket) {
+        return ResponseError;
+    }
+    
+    int value1;
+    int value2;
+    
+    if (sscanf(buffer, "%d,%d", &value1, &value2) == 2) {
+        *socket = value1;
+        *length = value2;
+        
+        return ResponseEmpty;
+    }
+    
+    return ResponseError;
+}
+
+ResponseTypes Sodaq_nbIOT::_udpURCParser(ResponseTypes& response, const char* buffer, size_t size, SaraN2UDPPacketMetadata* packet, char* data)
+{
+    if (!packet) {
+        return ResponseError;
+    }
+    
+    if (sscanf(buffer, "%d,\"%[^\"]\",%d,%d,\"%[^\"]\",%d", &packet->socketID, packet->ip, &packet->port, &packet->length, &data[0], &packet->remainingLength) == 7) {
+        return ResponseEmpty;
+    }
+    
+    return ResponseEmpty;
+}
+
+bool connectSocket(uint8_t socket, const char* host, uint16_t port)
+{
+    return false;
+}
 
 // Disconnects the modem from the network.
 bool Sodaq_nbIOT::disconnect()

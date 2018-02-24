@@ -21,12 +21,23 @@
 #ifndef _Sodaq_nbIOT_h
 #define _Sodaq_nbIOT_h
 
+#define DEFAULT_UDP_TIMOUT_MS 15000
+#define MAX_UDP_BUFFER 256
+
 #include "Arduino.h"
 #include "Sodaq_AT_Device.h"
 
+struct SaraN2UDPPacketMetadata {
+    uint8_t socketID;
+    char ip[16]; // max IP size 4*3 digits + 3 dots + zero term = 16
+    int port;
+    int length;
+    int remainingLength;
+};
+
 class Sodaq_nbIOT: public Sodaq_AT_Device
 {
-  public:
+    public:
     Sodaq_nbIOT();
 
     enum SentMessageStatus {
@@ -75,12 +86,16 @@ class Sodaq_nbIOT: public Sodaq_AT_Device
     uint8_t getCSQtime() const { return _CSQtime; }
     int8_t getLastRSSI() const { return _lastRSSI; }
 
-    //int createSocket(uint16_t localPort = 0);
-    //bool connectSocket(uint8_t socket, const char* host, uint16_t port);
-    //bool socketSend(uint8_t socket, const uint8_t* buffer, size_t size);
-    //size_t socketReceive(uint8_t socket, uint8_t* buffer, size_t size);
-    //size_t socketBytesPending(uint8_t socket);
-    //bool closeSocket(uint8_t socket);
+        int createSocket(uint16_t localPort = 0);
+        int socketSend(uint8_t socket, const char* remoteIP, const uint16_t remotePort, char* buffer, size_t size);
+        size_t socketReceiveHex(char* buffer, size_t length, SaraN2UDPPacketMetadata* p = NULL);
+        size_t socketReceiveBytes(uint8_t* buffer, size_t length, SaraN2UDPPacketMetadata* p = NULL);
+        size_t getPendingUDPBytes();
+        bool hasPendingUDPBytes();
+        int ping(char* ip);
+        bool closeSocket(uint8_t socket);
+        bool waitForUDPResponse(uint32_t timeoutMS = DEFAULT_UDP_TIMOUT_MS);
+        
 
     bool sendMessage(const uint8_t* buffer, size_t size);
     bool sendMessage(const char* str);
@@ -139,25 +154,31 @@ class Sodaq_nbIOT: public Sodaq_AT_Device
     uint8_t _CSQtime;
 
     // This is the minimum required RSSI to continue making the connection
-    // Use convertCSQ2RSSI if you have a CSQ value
-    int _minRSSI;
-
-    static bool startsWith(const char* pre, const char* str);
-    static size_t ipToString(IP_t ip, char* buffer, size_t size);
-    static bool isValidIPv4(const char* str);
+        // Use convertCSQ2RSSI if you have a CSQ value
+        int _minRSSI;
+        
+        // flag indicating UDP response via URC
+        int _receivedUDPResponseSocket = 0;
+        size_t _pendingUDPBytes = 0;
+        
+        static bool startsWith(const char* pre, const char* str);
+        static size_t ipToString(IP_t ip, char* buffer, size_t size);
+        static bool isValidIPv4(const char* str);
 
     bool waitForSignalQuality(uint32_t timeout = 60L * 1000);
     bool attachGprs(uint32_t timeout = 30 * 1000);
-    bool setNconfigParam(const char* param, const char* value);
-    bool checkAndApplyNconfig();
-    void reboot();
-
-    static ResponseTypes _csqParser(ResponseTypes& response, const char* buffer, size_t size, int* rssi, int* ber);
-    //static ResponseTypes _createSocketParser(ResponseTypes& response, const char* buffer, size_t size,
-    //        uint8_t* socket, uint8_t* dummy);
-    static ResponseTypes _nqmgsParser(ResponseTypes& response, const char* buffer, size_t size, uint16_t* pendingCount, uint16_t* errorCount);
-    static ResponseTypes _cgattParser(ResponseTypes& response, const char* buffer, size_t size, uint8_t* result, uint8_t* dummy);
-    static ResponseTypes _nconfigParser(ResponseTypes& response, const char* buffer, size_t size, bool* nconfigEqualsArray, uint8_t* dummy);
+        bool setNconfigParam(const char* param, const char* value);
+        bool checkAndApplyNconfig();
+        void reboot();
+        
+        size_t socketReceive(SaraN2UDPPacketMetadata* packet, char* buffer, size_t size);
+        static ResponseTypes _csqParser(ResponseTypes& response, const char* buffer, size_t size, int* rssi, int* ber);
+        static ResponseTypes _createSocketParser(ResponseTypes& response, const char* buffer, size_t size, uint8_t* socket, uint8_t* dummy);
+        static ResponseTypes _udpURCParser(ResponseTypes& response, const char* buffer, size_t size, SaraN2UDPPacketMetadata* packet, char* data);
+        static ResponseTypes _sendSocketParser(ResponseTypes& response, const char* buffer, size_t size, uint8_t* socket, uint8_t* dummy);
+        static ResponseTypes _nqmgsParser(ResponseTypes& response, const char* buffer, size_t size, uint16_t* pendingCount, uint16_t* errorCount);
+        static ResponseTypes _cgattParser(ResponseTypes& response, const char* buffer, size_t size, uint8_t* result, uint8_t* dummy);
+        static ResponseTypes _nconfigParser(ResponseTypes& response, const char* buffer, size_t size, bool* nconfigEqualsArray, uint8_t* dummy);
 };
 
 #endif
