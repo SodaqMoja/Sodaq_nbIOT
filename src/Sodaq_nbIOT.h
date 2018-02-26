@@ -52,7 +52,7 @@ class Sodaq_nbIOT: public Sodaq_AT_Device
         bool setIndicationsActive(bool on);
         bool setApn(const char* apn);
         bool setCdp(const char* cdp);
-        bool setBand(const char* band);
+        bool setBand(uint8_t band);
         bool setVerboseErrors(bool on);
         
         // Returns true if the modem replies to "AT" commands without timing out.
@@ -66,7 +66,7 @@ class Sodaq_nbIOT: public Sodaq_AT_Device
         void init(Stream& stream, int8_t onoffPin, int8_t txEnablePin = -1);
         
         // Turns on and initializes the modem, then connects to the network and activates the data connection.
-        bool connect(const char* apn, const char* cdp, const char* band, const char* forceOperator = 0);
+        bool connect(const char* apn, const char* cdp, const char* forceOperator = 0, uint8_t band = 8);
         
         // Disconnects the modem from the network.
         bool disconnect();

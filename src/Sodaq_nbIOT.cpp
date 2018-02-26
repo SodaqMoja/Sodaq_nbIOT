@@ -292,7 +292,7 @@ bool Sodaq_nbIOT::setCdp(const char* cdp)
     return (readResponse() == ResponseOK);
 }
 
-bool Sodaq_nbIOT::setBand(const char* band)
+bool Sodaq_nbIOT::setBand(uint8_t band)
 {
     print("AT+NBAND=");
     println(band);
@@ -309,7 +309,7 @@ void Sodaq_nbIOT::purgeAllResponsesRead()
 }
 
 // Turns on and initializes the modem, then connects to the network and activates the data connection.
-bool Sodaq_nbIOT::connect(const char* apn, const char* cdp, const char* band, const char* forceOperator)
+bool Sodaq_nbIOT::connect(const char* apn, const char* cdp, const char* forceOperator, uint8_t band)
 {
     if (!on()) {
         return false;

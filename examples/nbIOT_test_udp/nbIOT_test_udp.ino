@@ -70,7 +70,7 @@ License along with Sodaq_nbIOT.  If not, see
 
 const char* apn = "nb.inetd.gdsp";
 const char* cdp = "172.16.14.22";
-const char* band = "20";
+const uint8_t band = 20;
 const char* forceOperator = "20404"; // optional - depends on SIM / network
 
 Sodaq_nbIOT nbiot;
@@ -142,8 +142,8 @@ void setup()
 
     nbiot.init(MODEM_STREAM, powerPin);
     nbiot.setDiag(DEBUG_STREAM);
-    
-    if (!nbiot.connect(apn, cdp, band, forceOperator)) {
+
+    if (!nbiot.connect(apn, cdp, forceOperator, band)) {
         DEBUG_STREAM.println("FAILED TO CONNECT TO MODEM");
     }
 
