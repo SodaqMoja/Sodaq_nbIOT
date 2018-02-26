@@ -138,7 +138,7 @@ void setup()
     DEBUG_STREAM.begin(DEBUG_STREAM_BAUD);
     MODEM_STREAM.begin(nbiot.getDefaultBaudrate());
 
-    DEBUG_STREAM.print("Initializing and connecting... ");
+    DEBUG_STREAM.println("Initializing and connecting... ");
 
     nbiot.init(MODEM_STREAM, powerPin);
     nbiot.setDiag(DEBUG_STREAM);
