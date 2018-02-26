@@ -98,7 +98,7 @@ void sendMessageThroughUDP()
     DEBUG_STREAM.print(size);
     DEBUG_STREAM.println(lengthSent);
 
-   // wait for data
+    // wait for data
     if (nbiot.waitForUDPResponse()) {
         DEBUG_STREAM.println("GOT RESPONSE");
 
@@ -148,7 +148,9 @@ void setup()
 
     digitalWrite(SARA_TX_ENABLE, HIGH);
     digitalWrite(SARA_RESET, HIGH);
-    
+
+    nbiot.overrideNconfigParam("CR_0354_0338_SCRAMBLING", true);
+
     if (!nbiot.connect(apn, cdp, forceOperator, band)) {
         DEBUG_STREAM.println("FAILED TO CONNECT TO MODEM");
     }

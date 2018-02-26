@@ -74,17 +74,17 @@
 
 typedef struct NameValuePair {
     const char* Name;
-    const char* Value;
+    bool Value;
 } NameValuePair;
 
 const uint8_t nConfigCount = 6;
 static NameValuePair nConfig[nConfigCount] = {
-    { "AUTOCONNECT", "FALSE" },
-    { "CR_0354_0338_SCRAMBLING", "TRUE" },
-    { "CR_0859_SI_AVOID", "FALSE" },
-    { "COMBINE_ATTACH", "FALSE" },
-    { "CELL_RESELECTION", "FALSE" },
-    { "ENABLE_BIP", "FALSE" },
+    { "AUTOCONNECT", false },
+    { "CR_0354_0338_SCRAMBLING", false },
+    { "CR_0859_SI_AVOID", false },
+    { "COMBINE_ATTACH", false },
+    { "CELL_RESELECTION", false },
+    { "ENABLE_BIP", false },
 };
 
 class Sodaq_nbIotOnOff : public Sodaq_OnOffBee
@@ -119,7 +119,6 @@ Sodaq_nbIOT::Sodaq_nbIOT() :
 // Returns true if the modem replies to "AT" commands without timing out.
 bool Sodaq_nbIOT::isAlive()
 {
-    _disableDiag = true;
     println(STR_AT);
     
     return (readResponse(NULL, 450) == ResponseOK);
@@ -321,6 +320,9 @@ bool Sodaq_nbIOT::connect(const char* apn, const char* cdp, const char* forceOpe
         return false;
     }
     
+    if (!checkAndApplyNconfig()) {
+        return false;
+    }
     
     reboot();
     
@@ -328,9 +330,6 @@ bool Sodaq_nbIOT::connect(const char* apn, const char* cdp, const char* forceOpe
         return false;
     }
     
-    if (!checkAndApplyNconfig()) {
-        return false;
-    }
 
     purgeAllResponsesRead();
 
@@ -413,7 +412,7 @@ bool Sodaq_nbIOT::checkAndApplyNconfig()
             
             if (!applyParam[i]) {
                 debugPrintLn("... CHANGE");
-                setNconfigParam(nConfig[i].Name, nConfig[i].Value);
+                setNconfigParam(nConfig[i].Name, nConfig[i].Value ? "TRUE" : "FALSE");
             }
             else {
                 debugPrintLn("... OK");
@@ -437,6 +436,16 @@ bool Sodaq_nbIOT::setNconfigParam(const char* param, const char* value)
     return readResponse() == ResponseOK;
 }
 
+bool Sodaq_nbIOT::overrideNconfigParam(const char* param, bool value) {
+    for (uint8_t i = 0; i < nConfigCount; i++) {
+        if (strcmp(nConfig[i].Name, param) == 0) {
+            nConfig[i].Value = value;
+            return true;
+        }
+    }
+    return false;
+}
+
 ResponseTypes Sodaq_nbIOT::_nconfigParser(ResponseTypes& response, const char* buffer, size_t size, bool* nconfigEqualsArray, uint8_t* dummy)
 {
     if (!nconfigEqualsArray) {
@@ -449,7 +458,7 @@ ResponseTypes Sodaq_nbIOT::_nconfigParser(ResponseTypes& response, const char* b
     if (sscanf(buffer, "+NCONFIG: \"%[^\"]\",\"%[^\"]\"", name, value) == 2) {
         for (uint8_t i = 0; i < nConfigCount; i++) {
             if (strcmp(nConfig[i].Name, name) == 0) {
-                if (strcmp(nConfig[i].Value, value) == 0) {
+                if (strcmp(nConfig[i].Value ? "TRUE" : "FALSE", value) == 0) {
                     nconfigEqualsArray[i] = true;
                     
                     break;
