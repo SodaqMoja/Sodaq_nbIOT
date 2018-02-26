@@ -67,14 +67,29 @@ Method|Description
 **getDefaultBaudRate ()**|Returns the correct baudrate for the serial port that connects to the device.
 **setDiag (Stream& stream)**|Sets the optional "Diagnostics and Debug" stream.
 **init(Stream& stream, int8_t onoffPin)**|    // Initializes the modem instance. Sets the modem stream and the on-off power pins.
+**overrideNconfigParam(const char\* param, bool value)**|Override a default config parameter, has to be called before connect(). Returns false if the parameter name was not found. Possible values for param are: AUTOCONNECT, CR_0354_0338_SCRAMBLING, CR_0859_SI_AVOID, COMBINE_ATTACH, CELL_RESELECTION and ENABLE_BIP.
 **isAlive()**|Returns true if the modem replies to "AT" commands without timing out.
-**connect(const char\* apn, const char\* cdp, const char\* forceOperator = 0)**|Turns on and initializes the modem, then connects to the network and activates the data connection. Returns true when successful.
+**connect(const char\* apn, const char\* cdp, const char\* forceOperator = 0, uint8_t band = 8)**|Turns on and initializes the modem, then connects to the network and activates the data connection. Returns true when successful.
 **disconnect()**|Disconnects the modem from the network. Returns true when successful.
 **isConnected()**|Returns true if the modem is connected to the network and has an activated data connection.
 **sendMessage(const uint8_t\* buffer, size_t size)**|Sends the given buffer, up to "size" bytes long. Returns true when the message is successfully queued for transmission on the modem.
-**sendMessage(const char* str)**|Sends the given null-terminated c-string. Returns true when the message is successfully queued for transmission on the modem.
+**sendMessage(const char\* str)**|Sends the given null-terminated c-string. Returns true when the message is successfully queued for transmission on the modem.
 **sendMessage(String str)**|Sends the given String. Returns true when the message is successfully queued for transmission on the modem.
 **getSentMessagesCount(SentMessageStatus filter)**|Returns the number of messages that are either pending (filter == Pending) or failed to be transmitted (filter == Error) on the modem.
+**createSocket(uint16_t localPort = 0)**|Create a UDP socket for the specified local port, returns the socket handle.
+**closeSocket(uint8_t socket)**|Close a UDP socket by handle, returns true if successful.
+**socketSend(uint8_t socket, const char\* remoteIP, const uint16_t remotePort, char\* buffer, size_t size)**|Send a udp payload buffer to a specified remote IP and port, through a specific socket.
+**socketReceiveHex(char\* buffer, size_t length, SaraN2UDPPacketMetadata\* p = NULL)**|Receive pending socket data as hex data in a passed buffer. Optionally pass a helper object to receive metadata about the origin of the socket data.
+**socketReceiveBytes(uint8_t\* buffer, size_t length, SaraN2UDPPacketMetadata\* p = NULL)**|Receive pending socket data as binary data in a passed buffer. Optionally pass a helper object to receive metadata about the origin of the socket data.
+**getPendingUDPBytes()**| Return the number of pending bytes, gets updated by calling socketReceiveXXX.
+**hasPendingUDPBytes()**| Helper function returning if getPendingUDPBytes() > 0.
+**ping(char\* ip)**| Ping a specific IP address.
+**waitForUDPResponse(uint32_t timeoutMS = DEFAULT_UDP_TIMOUT_MS)**|Calls isAlive() until the passed timeout, or until a UDP packet has been received on any socket.
+
+
+
+
+
 
 ## Contributing
 
