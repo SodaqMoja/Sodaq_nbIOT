@@ -143,6 +143,12 @@ void setup()
     nbiot.init(MODEM_STREAM, powerPin);
     nbiot.setDiag(DEBUG_STREAM);
 
+    pinMode(SARA_TX_ENABLE, OUTPUT);
+    pinMode(SARA_RESET, OUTPUT);
+
+    digitalWrite(SARA_TX_ENABLE, HIGH);
+    digitalWrite(SARA_RESET, HIGH);
+    
     if (!nbiot.connect(apn, cdp, forceOperator, band)) {
         DEBUG_STREAM.println("FAILED TO CONNECT TO MODEM");
     }
