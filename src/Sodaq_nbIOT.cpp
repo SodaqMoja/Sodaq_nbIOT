@@ -74,30 +74,30 @@
 
 typedef struct NameValuePair {
     const char* Name;
-    const char* Value;
+    bool Value;
 } NameValuePair;
 
 const uint8_t nConfigCount = 6;
 static NameValuePair nConfig[nConfigCount] = {
-    { "AUTOCONNECT", "FALSE" },
-    { "CR_0354_0338_SCRAMBLING", "FALSE" },
-    { "CR_0859_SI_AVOID", "FALSE" },
-    { "COMBINE_ATTACH" , "FALSE" },
-    { "CELL_RESELECTION" , "FALSE" },
-    { "ENABLE_BIP" , "FALSE" },
+    { "AUTOCONNECT", false },
+    { "CR_0354_0338_SCRAMBLING", false },
+    { "CR_0859_SI_AVOID", false },
+    { "COMBINE_ATTACH", false },
+    { "CELL_RESELECTION", false },
+    { "ENABLE_BIP", false },
 };
 
 class Sodaq_nbIotOnOff : public Sodaq_OnOffBee
 {
-  public:
-    Sodaq_nbIotOnOff();
-    void init(int onoffPin);
-    void on();
-    void off();
-    bool isOn();
-  private:
-    int8_t _onoffPin;
-    bool _onoff_status;
+    public:
+        Sodaq_nbIotOnOff();
+        void init(int onoffPin);
+        void on();
+        void off();
+        bool isOn();
+    private:
+        int8_t _onoffPin;
+        bool _onoff_status;
 };
 
 static Sodaq_nbIotOnOff sodaq_nbIotOnOff;
@@ -119,9 +119,8 @@ Sodaq_nbIOT::Sodaq_nbIOT() :
 // Returns true if the modem replies to "AT" commands without timing out.
 bool Sodaq_nbIOT::isAlive()
 {
-    _disableDiag = true;
     println(STR_AT);
-
+    
     return (readResponse(NULL, 450) == ResponseOK);
 }
 
@@ -131,12 +130,12 @@ void Sodaq_nbIOT::init(Stream& stream, int8_t onoffPin, int8_t txEnablePin)
     debugPrintLn("[init] started.");
 
     initBuffer(); // safe to call multiple times
-
+    
     setModemStream(stream);
-
+    
     sodaq_nbIotOnOff.init(onoffPin);
     _onoff = &sodaq_nbIotOnOff;
-
+    
     setTxEnablePin(txEnablePin);
 }
 
@@ -144,7 +143,15 @@ bool Sodaq_nbIOT::setRadioActive(bool on)
 {
     print("AT+CFUN=");
     println(on ? "1" : "0");
+    
+    return (readResponse() == ResponseOK);
+}
 
+bool Sodaq_nbIOT::setVerboseErrors(bool on)
+{
+    print("AT+CMEE=");
+    println(on ? "1" : "0"); // 2 is not supported on the n2, according to AT command manual
+    
     return (readResponse() == ResponseOK);
 }
 
@@ -152,14 +159,14 @@ bool Sodaq_nbIOT::setIndicationsActive(bool on)
 {
     print("AT+NSMI=");
     println(on ? "1" : "0");
-
+    
     if (readResponse() != ResponseOK) {
         return false;
     }
-
+    
     print("AT+NNMI=");
     println(on ? "1" : "0");
-
+    
     return (readResponse() == ResponseOK);
 }
 
@@ -177,79 +184,56 @@ ResponseTypes Sodaq_nbIOT::readResponse(char* buffer, size_t size,
 {
     ResponseTypes response = ResponseNotFound;
     uint32_t from = NOW;
-
+    
     do {
         // 250ms,  how many bytes at which baudrate?
         int count = readLn(buffer, size, 250);
         sodaq_wdt_reset();
-
+        
         if (count > 0) {
             if (outSize) {
                 *outSize = count;
             }
-
+            
             if (_disableDiag && strncmp(buffer, "OK", 2) != 0) {
                 _disableDiag = false;
             }
-
+            
             debugPrint("[rdResp]: ");
             debugPrintLn(buffer);
 
-            // TODO handle socket URC
-
-            //int param1, param2;
-            //if (sscanf(buffer, "+UUSORD: %d,%d", &param1, &param2) == 2) {
-            //    uint16_t socket_nr = param1;
-            //    uint16_t nr_bytes = param2;
-            //    debugPrint("Unsolicited: Socket ");
-            //    debugPrint(socket_nr);
-            //    debugPrint(": ");
-            //    debugPrint(param2);
-            //    debugPrintLn(" bytes pending");
-            //    if (socket_nr < ARRAY_SIZE(_socketPendingBytes)) {
-            //        _socketPendingBytes[socket_nr] = nr_bytes;
-            //    }
-            //    continue;
-            //}
-            //else if (sscanf(buffer, "+UUSOCL: %d", &param1) == 1) {
-            //    uint16_t socket_nr = param1;
-            //    if (socket_nr < ARRAY_SIZE(_socketPendingBytes)) {
-            //        debugPrint("Unsolicited: Socket ");
-            //        debugPrint(socket_nr);
-            //        debugPrint(": ");
-            //        debugPrintLn("closed by remote");
-
-            //        _socketClosedBit[socket_nr] = true;
-            //        if (socket_nr == _openTCPsocket) {
-            //            _openTCPsocket = -1;
-            //            // Report this other software layers
-            //            if (_tcpClosedHandler) {
-            //                _tcpClosedHandler();
-            //            }
-            //        }
-            //    }
-            //    continue;
-            //}
-
+            int socketID;
+            int dataLength;
+            
+            // Handle socket URC
+            if (sscanf(buffer, "+NSONMI: %d,%d", &socketID, &dataLength) == 2) {
+                debugPrint("Unsolicited: Socket ");
+                debugPrint(socketID);
+                debugPrint(": ");
+                debugPrintLn(dataLength);
+                _receivedUDPResponseSocket = socketID;
+                _pendingUDPBytes = dataLength;
+            }
+            
             if (startsWith(STR_AT, buffer)) {
                 continue; // skip echoed back command
             }
-
+            
             _disableDiag = false;
-
+            
             if (startsWith(STR_RESPONSE_OK, buffer)) {
                 return ResponseOK;
             }
-
+            
             if (startsWith(STR_RESPONSE_ERROR, buffer) ||
                     startsWith(STR_RESPONSE_CME_ERROR, buffer) ||
                     startsWith(STR_RESPONSE_CMS_ERROR, buffer)) {
                 return ResponseError;
             }
-
+            
             if (parserMethod) {
                 ResponseTypes parserResponse = parserMethod(response, buffer, count, callbackParameter, callbackParameter2);
-
+                
                 if ((parserResponse != ResponseEmpty) && (parserResponse != ResponsePendingExtra)) {
                     return parserResponse;
                 }
@@ -258,7 +242,7 @@ ResponseTypes Sodaq_nbIOT::readResponse(char* buffer, size_t size,
                     // ResponseEmpty indicates that the parser was satisfied
                     // Continue until "OK", "ERROR", or whatever else.
                 }
-
+                
                 // Prevent calling the parser again.
                 // This could happen if the input line is too long. It will be split
                 // and the next readLn will return the next part.
@@ -267,7 +251,7 @@ ResponseTypes Sodaq_nbIOT::readResponse(char* buffer, size_t size,
                     parserMethod = 0;
                 }
             }
-
+            
             // at this point, the parserMethod has ran and there is no override response from it,
             // so if there is some other response recorded, return that
             // (otherwise continue iterations until timeout)
@@ -276,14 +260,15 @@ ResponseTypes Sodaq_nbIOT::readResponse(char* buffer, size_t size,
                 return response;
             }
         }
-
+        
         delay(10);      // TODO Why do we need this delay?
-    } while (!is_timedout(from, timeout));
-
+    }
+    while (!is_timedout(from, timeout));
+    
     if (outSize) {
         *outSize = 0;
     }
-
+    
     debugPrintLn("[rdResp]: timed out");
     return ResponseTimeout;
 }
@@ -293,7 +278,7 @@ bool Sodaq_nbIOT::setApn(const char* apn)
     print("AT+CGDCONT=" DEFAULT_CID ",\"IP\",\"");
     print(apn);
     println("\"");
-
+    
     return (readResponse() == ResponseOK);
 }
 
@@ -302,52 +287,72 @@ bool Sodaq_nbIOT::setCdp(const char* cdp)
     print("AT+NCDP=\"");
     print(cdp);
     println("\"");
+    
+    return (readResponse() == ResponseOK);
+}
 
+bool Sodaq_nbIOT::setBand(uint8_t band)
+{
+    print("AT+NBAND=");
+    println(band);
+    
     return (readResponse() == ResponseOK);
 }
 
 void Sodaq_nbIOT::purgeAllResponsesRead()
 {
     uint32_t start = millis();
-
+    
     // make sure all the responses within the timeout have been read
     while ((readResponse(0, 1000) != ResponseTimeout) && !is_timedout(start, 2000)) {}
 }
 
 // Turns on and initializes the modem, then connects to the network and activates the data connection.
-bool Sodaq_nbIOT::connect(const char* apn, const char* cdp, const char* forceOperator)
+bool Sodaq_nbIOT::connect(const char* apn, const char* cdp, const char* forceOperator, uint8_t band)
 {
     if (!on()) {
         return false;
     }
+    
+    purgeAllResponsesRead();
+    
+    if (!setBand(band)) {
+        return false;
+    }
+    
+    if (!checkAndApplyNconfig()) {
+        return false;
+    }
+    
+    reboot();
+    
+    if (!on()) {
+        return false;
+    }
+    
 
     purgeAllResponsesRead();
+
+#ifdef DEBUG
+    println("AT+NBAND?");
+    readResponse();
+    println("AT+NCONFIG?");
+    readResponse();
+#endif
 
     if (!setRadioActive(false)) {
         return false;
     }
-
-    if (!checkAndApplyNconfig()) {
+    
+     // TODO turn on 
+     if (!setIndicationsActive(false)) {
         return false;
     }
-
-    reboot();
-
-    if (!on()) {
-        return false;
-    }
-
-    purgeAllResponsesRead();
 
     if (!setApn(apn) || !setCdp(cdp)) {
         return false;
     }
-
-    // TODO turn on
-    if (!setIndicationsActive(false)) {
-        return false;
-    }
-
+    
     if (!setRadioActive(true)) {
         return false;
     }
@@ -356,26 +361,31 @@ bool Sodaq_nbIOT::connect(const char* apn, const char* cdp, const char* forceOpe
         print("AT+COPS=1,2,\"");
         print(forceOperator);
         println("\"");
-
+        
         if (readResponse() != ResponseOK) {
             return false;
         }
     }
-
+    
     if (!waitForSignalQuality()) {
         return false;
     }
-
+    
+    setVerboseErrors(true);
+    
     if (!attachGprs()) {
         return false;
     }
-
+    
+    println("AT+CGPADDR");
+    readResponse();
+    
     #ifdef DEBUG
     println("AT+CPSMS?");
     readResponse();
     readResponse();
     #endif
-
+    
     // If we got this far we succeeded
     return true;
 }
@@ -383,34 +393,35 @@ bool Sodaq_nbIOT::connect(const char* apn, const char* cdp, const char* forceOpe
 void Sodaq_nbIOT::reboot()
 {
     println("AT+NRB");
-
+    
     // wait up to 2000ms for the modem to come up
     uint32_t start = millis();
+    
     while ((readResponse() != ResponseOK) && !is_timedout(start, 2000)) { }
 }
 
 bool Sodaq_nbIOT::checkAndApplyNconfig()
 {
     bool applyParam[nConfigCount];
-
+    
     println("AT+NCONFIG?");
-
+    
     if (readResponse<bool, uint8_t>(_nconfigParser, applyParam, NULL) == ResponseOK) {
-        for (uint8_t i = 0; i < nConfigCount; i++)
-        {
+        for (uint8_t i = 0; i < nConfigCount; i++) {
             debugPrint(nConfig[i].Name);
+            
             if (!applyParam[i]) {
                 debugPrintLn("... CHANGE");
-                setNconfigParam(nConfig[i].Name, nConfig[i].Value);
+                setNconfigParam(nConfig[i].Name, nConfig[i].Value ? "TRUE" : "FALSE");
             }
             else {
                 debugPrintLn("... OK");
             }
         }
-
+        
         return true;
     }
-
+    
     return false;
 }
 
@@ -421,8 +432,18 @@ bool Sodaq_nbIOT::setNconfigParam(const char* param, const char* value)
     print("\",\"");
     print(value);
     println("\"");
-
+    
     return readResponse() == ResponseOK;
+}
+
+bool Sodaq_nbIOT::overrideNconfigParam(const char* param, bool value) {
+    for (uint8_t i = 0; i < nConfigCount; i++) {
+        if (strcmp(nConfig[i].Name, param) == 0) {
+            nConfig[i].Value = value;
+            return true;
+        }
+    }
+    return false;
 }
 
 ResponseTypes Sodaq_nbIOT::_nconfigParser(ResponseTypes& response, const char* buffer, size_t size, bool* nconfigEqualsArray, uint8_t* dummy)
@@ -430,24 +451,24 @@ ResponseTypes Sodaq_nbIOT::_nconfigParser(ResponseTypes& response, const char* b
     if (!nconfigEqualsArray) {
         return ResponseError;
     }
-
+    
     char name[32];
     char value[32];
+    
     if (sscanf(buffer, "+NCONFIG: \"%[^\"]\",\"%[^\"]\"", name, value) == 2) {
-        for (uint8_t i = 0; i < nConfigCount; i++)
-        {
+        for (uint8_t i = 0; i < nConfigCount; i++) {
             if (strcmp(nConfig[i].Name, name) == 0) {
-                if (strcmp(nConfig[i].Value, value) == 0) {
+                if (strcmp(nConfig[i].Value ? "TRUE" : "FALSE", value) == 0) {
                     nconfigEqualsArray[i] = true;
-
+                    
                     break;
                 }
             }
         }
-
+        
         return ResponsePendingExtra;
     }
-
+    
     return ResponseError;
 }
 
@@ -455,72 +476,233 @@ bool Sodaq_nbIOT::attachGprs(uint32_t timeout)
 {
     uint32_t start = millis();
     uint32_t delay_count = 500;
-
+    
     while (!is_timedout(start, timeout)) {
         if (isConnected()) {
             return true;
         }
-        //println("AT+CGATT=1");
-
+        
+        // println("AT+CGATT=1");
+        // readResponse(); // get Error 51 Command implemented but currently disabled
+        
         //if (readResponse() == ResponseOK) {
         //    return true;
         //}
-
+        
         sodaq_wdt_safe_delay(delay_count);
-
+        
         // Next time wait a little longer, but not longer than 5 seconds
         if (delay_count < 5000) {
             delay_count += 1000;
         }
     }
-
+    
     return false;
 }
 
-//int Sodaq_nbIOT::createSocket(uint16_t localPort)
-//{
-//    // only Datagram/UDP is supported
-//    print("AT+NSOCR=DGRAM,17,");
-//    print(localPort);
-//    print(",1"); // enable incoming message URC (NSONMI)
-//
-//    uint8_t socket;
-//
-//    if (readResponse<uint8_t, uint8_t>(_createSocketParser, &socket, NULL) == ResponseOK) {
-//        return socket;
-//    }
-//
-//    return SOCKET_FAIL;
-//}
-//
-//ResponseTypes Sodaq_nbIOT::_createSocketParser(ResponseTypes& response, const char* buffer, size_t size,
-//        uint8_t* socket, uint8_t* dummy)
-//{
-//    if (!socket) {
-//        return ResponseError;
-//    }
-//
-//    int value;
-//
-//    if (sscanf(buffer, "%d", &value) == 1) {
-//        *socket = value;
-//
-//        return ResponseEmpty;
-//    }
-//
-//    return ResponseError;
-//}
+int Sodaq_nbIOT::createSocket(uint16_t localPort)
+{
+    purgeAllResponsesRead();
+    // only Datagram/UDP is supported
+    print("AT+NSOCR=\"DGRAM\",17,");
+    print(localPort);
+    println(",1");
+    
+    uint8_t socket;
+    
+    if (readResponse<uint8_t, uint8_t>(_createSocketParser, &socket, NULL) == ResponseOK) {
+        return socket;
+    }
+    
+    return SOCKET_FAIL;
+}
 
-//bool connectSocket(uint8_t socket, const char* host, uint16_t port)
-//{
-//    return false;
-//}
+bool Sodaq_nbIOT::closeSocket(uint8_t socketID)
+{
+    // only Datagram/UDP is supported
+    print("AT+NSOCL=");
+    println(socketID);
+    
+    return readResponse() == ResponseOK;
+}
+
+int Sodaq_nbIOT::ping(char* ip)
+{
+    print("AT+NPING=");
+    print("\"");
+    print(ip);
+    println("\"");
+    
+    return readResponse() == ResponseOK;
+}
+
+int Sodaq_nbIOT::socketSend(uint8_t socket, const char* remoteIP, const uint16_t remotePort, char* buffer, size_t size)
+{
+    if (size > 512) {
+        debugPrintLn("SocketSend exceeded maximum buffer size!");
+        return -1;
+    }
+    
+    // only Datagram/UDP is supported
+    print("AT+NSOST=");
+    print(socket);
+    print(',');
+    print('\"');
+    print(remoteIP);
+    print('\"');
+    print(',');
+    print(remotePort);
+    print(',');
+    print(size);
+    print(',');
+    print('\"');
+    print(buffer);
+    println('\"');
+    
+    uint8_t retSocketID;
+    uint8_t sentLength;
+    
+    if (readResponse<uint8_t, uint8_t>(_sendSocketParser, &retSocketID, &sentLength) == ResponseOK) {
+        return socket;
+    }
+    
+    return sentLength;
+}
+
+bool Sodaq_nbIOT::waitForUDPResponse(uint32_t timeoutMS)
+{
+    if (hasPendingUDPBytes()) { return true; }
+    
+    uint32_t startTime = millis();
+    
+    while (!hasPendingUDPBytes() && (millis() - startTime) < timeoutMS) {
+        isAlive();
+        sodaq_wdt_safe_delay(10);
+    }
+    
+    return hasPendingUDPBytes();
+}
+
+size_t Sodaq_nbIOT::getPendingUDPBytes()
+{
+    return _pendingUDPBytes;
+}
+
+bool Sodaq_nbIOT::hasPendingUDPBytes()
+{
+    return _pendingUDPBytes > 0;
+}
+
+size_t Sodaq_nbIOT::socketReceive(SaraN2UDPPacketMetadata* packet, char* buffer, size_t size)
+{
+    if (_pendingUDPBytes == 0) {
+        // no URC has happened, no socket to read
+        debugPrintLn("Reading from socket without URC!");
+        return 0;
+    }
+    
+    print("AT+NSORF=");
+    print(_receivedUDPResponseSocket);
+    print(',');
+    println(size);
+    
+    if (readResponse<SaraN2UDPPacketMetadata, char>(_udpURCParser, packet, buffer) == ResponseOK) {
+        // update pending bytes
+        _pendingUDPBytes -= packet->length;
+        return packet->length;
+    }
+    
+    debugPrintLn("Reading from socket failed!");
+    return 0;
+}
+
+size_t Sodaq_nbIOT::socketReceiveHex(char* buffer, size_t length, SaraN2UDPPacketMetadata* p)
+{
+    SaraN2UDPPacketMetadata packet;
+
+    int size = min(length / 2, _pendingUDPBytes);
+    return socketReceive(p ? p : &packet, buffer, size);
+}
+
+size_t Sodaq_nbIOT::socketReceiveBytes(uint8_t* buffer, size_t length, SaraN2UDPPacketMetadata* p)
+{
+    int size = min(length, min(MAX_UDP_BUFFER, _pendingUDPBytes));
+
+    SaraN2UDPPacketMetadata packet;
+    char tempBuffer[MAX_UDP_BUFFER];
+
+    size_t receivedSize = socketReceive(p ? p : &packet, tempBuffer, size);
+
+    if (buffer && length > 0) {
+        for (int i = 0; i < receivedSize; i += 2) {
+            buffer[i / 2] = HEX_PAIR_TO_BYTE(tempBuffer[i], tempBuffer[i + 1]);
+        }
+    }
+    
+    return receivedSize;
+}
+
+ResponseTypes Sodaq_nbIOT::_createSocketParser(ResponseTypes& response, const char* buffer, size_t size,
+        uint8_t* socket, uint8_t* dummy)
+{
+    if (!socket) {
+        return ResponseError;
+    }
+    
+    int value;
+    
+    if (sscanf(buffer, "%d", &value) == 1) {
+        *socket = value;
+        
+        return ResponseEmpty;
+    }
+    
+    return ResponseError;
+}
+
+ResponseTypes Sodaq_nbIOT::_sendSocketParser(ResponseTypes& response, const char* buffer, size_t size,
+        uint8_t* socket, uint8_t* length)
+{
+    if (!socket) {
+        return ResponseError;
+    }
+    
+    int value1;
+    int value2;
+    
+    if (sscanf(buffer, "%d,%d", &value1, &value2) == 2) {
+        *socket = value1;
+        *length = value2;
+        
+        return ResponseEmpty;
+    }
+    
+    return ResponseError;
+}
+
+ResponseTypes Sodaq_nbIOT::_udpURCParser(ResponseTypes& response, const char* buffer, size_t size, SaraN2UDPPacketMetadata* packet, char* data)
+{
+    if (!packet) {
+        return ResponseError;
+    }
+    
+    if (sscanf(buffer, "%d,\"%[^\"]\",%d,%d,\"%[^\"]\",%d", &packet->socketID, packet->ip, &packet->port, &packet->length, &data[0], &packet->remainingLength) == 7) {
+        return ResponseEmpty;
+    }
+    
+    return ResponseEmpty;
+}
+
+bool connectSocket(uint8_t socket, const char* host, uint16_t port)
+{
+    return false;
+}
 
 // Disconnects the modem from the network.
 bool Sodaq_nbIOT::disconnect()
 {
     println("AT+CGATT=0");
-
+    
     return (readResponse(NULL, 40000) == ResponseOK);
 }
 
@@ -528,13 +710,13 @@ bool Sodaq_nbIOT::disconnect()
 bool Sodaq_nbIOT::isConnected()
 {
     uint8_t value = 0;
-
+    
     println("AT+CGATT?");
-
+    
     if (readResponse<uint8_t, uint8_t>(_cgattParser, &value, NULL) == ResponseOK) {
         return (value == 1);
     }
-
+    
     return false;
 }
 
@@ -543,19 +725,19 @@ bool Sodaq_nbIOT::isConnected()
 bool Sodaq_nbIOT::getRSSIAndBER(int8_t* rssi, uint8_t* ber)
 {
     static char berValues[] = { 49, 43, 37, 25, 19, 13, 7, 0 }; // 3GPP TS 45.008 [20] subclause 8.2.4
-
+    
     println("AT+CSQ");
-
+    
     int csqRaw = 0;
     int berRaw = 0;
-
+    
     if (readResponse<int, int>(_csqParser, &csqRaw, &berRaw) == ResponseOK) {
         *rssi = ((csqRaw == 99) ? 0 : convertCSQ2RSSI(csqRaw));
         *ber = ((berRaw == 99 || static_cast<size_t>(berRaw) >= sizeof(berValues)) ? 0 : berValues[berRaw]);
-
+        
         return true;
     }
-
+    
     return false;
 }
 
@@ -592,11 +774,11 @@ bool Sodaq_nbIOT::isValidIPv4(const char* str)
     uint8_t segs = 0; // Segment count
     uint8_t chcnt = 0; // Character count within segment
     uint8_t accum = 0; // Accumulator for segment
-
+    
     if (!str) {
         return false;
     }
-
+    
     // Process every character in string
     while (*str != '\0') {
         // Segment changeover
@@ -605,44 +787,44 @@ bool Sodaq_nbIOT::isValidIPv4(const char* str)
             if (chcnt == 0) {
                 return false;
             }
-
+            
             // Limit number of segments
             if (++segs == 4) {
                 return false;
             }
-
+            
             // Reset segment values and restart loop
             chcnt = accum = 0;
             str++;
             continue;
         }
-
+        
         // Check numeric
         if ((*str < '0') || (*str > '9')) {
             return false;
         }
-
+        
         // Accumulate and check segment
         if ((accum = accum * 10 + *str - '0') > 255) {
             return false;
         }
-
+        
         // Advance other segment specific stuff and continue loop
         chcnt++;
         str++;
     }
-
+    
     // Check enough segments and enough characters in last segment
     if (segs != 3) {
         return false;
     }
-
+    
     if (chcnt == 0) {
         return false;
     }
-
+    
     // Address OK
-
+    
     return true;
 }
 
@@ -652,9 +834,9 @@ bool Sodaq_nbIOT::waitForSignalQuality(uint32_t timeout)
     const int8_t minRSSI = getMinRSSI();
     int8_t rssi;
     uint8_t ber;
-
+    
     uint32_t delay_count = 500;
-
+    
     while (!is_timedout(start, timeout)) {
         if (getRSSIAndBER(&rssi, &ber)) {
             if (rssi != 0 && rssi >= minRSSI) {
@@ -663,15 +845,15 @@ bool Sodaq_nbIOT::waitForSignalQuality(uint32_t timeout)
                 return true;
             }
         }
-
+        
         sodaq_wdt_safe_delay(delay_count);
-
+        
         // Next time wait a little longer, but not longer than 5 seconds
         if (delay_count < 5000) {
             delay_count += 1000;
         }
     }
-
+    
     return false;
 }
 
@@ -680,13 +862,14 @@ ResponseTypes Sodaq_nbIOT::_cgattParser(ResponseTypes& response, const char* buf
     if (!result) {
         return ResponseError;
     }
-
+    
     int val;
+    
     if (sscanf(buffer, "+CGATT: %d", &val) == 1) {
         *result = val;
         return ResponseEmpty;
     }
-
+    
     return ResponseError;
 }
 
@@ -696,11 +879,11 @@ ResponseTypes Sodaq_nbIOT::_csqParser(ResponseTypes& response, const char* buffe
     if (!rssi || !ber) {
         return ResponseError;
     }
-
+    
     if (sscanf(buffer, "+CSQ: %d,%d", rssi, ber) == 2) {
         return ResponseEmpty;
     }
-
+    
     return ResponseError;
 }
 
@@ -709,28 +892,28 @@ bool Sodaq_nbIOT::sendMessage(const uint8_t* buffer, size_t size)
     if (size > 512) {
         return false;
     }
-
+    
     print("AT+NMGS=");
     print(size);
     print(",\"");
-
+    
     for (uint16_t i = 0; i < size; ++i) {
         print(static_cast<char>(NIBBLE_TO_HEX_CHAR(HIGH_NIBBLE(buffer[i]))));
         print(static_cast<char>(NIBBLE_TO_HEX_CHAR(LOW_NIBBLE(buffer[i]))));
     }
-
+    
     println("\"");
-
+    
     return (readResponse() == ResponseOK);
 }
 
 int Sodaq_nbIOT::getSentMessagesCount(SentMessageStatus filter)
 {
     println("AT+NQMGS");
-
+    
     uint16_t pendingCount = 0;
     uint16_t errorCount = 0;
-
+    
     if (readResponse<uint16_t, uint16_t>(_nqmgsParser, &pendingCount, &errorCount) == ResponseOK) {
         if (filter == Pending) {
             return pendingCount;
@@ -739,7 +922,7 @@ int Sodaq_nbIOT::getSentMessagesCount(SentMessageStatus filter)
             return errorCount;
         }
     }
-
+    
     return -1;
 }
 
@@ -748,17 +931,17 @@ ResponseTypes Sodaq_nbIOT::_nqmgsParser(ResponseTypes& response, const char* buf
     if (!pendingCount || !errorCount) {
         return ResponseError;
     }
-
+    
     int pendingValue;
     int errorValue;
-
+    
     if (sscanf(buffer, "PENDING=%d,SENT=%*d,ERROR=%d", &pendingValue, &errorValue) == 2) {
         *pendingCount = pendingValue;
         *errorCount = errorValue;
-
+        
         return ResponseEmpty;
     }
-
+    
     return ResponseError;
 }
 
@@ -807,7 +990,7 @@ void Sodaq_nbIotOnOff::off()
     if (_onoffPin >= 0) {
         digitalWrite(_onoffPin, LOW);
     }
-
+    
     // Should be instant
     // Let's wait a little, but not too long
     delay(50);
@@ -816,16 +999,16 @@ void Sodaq_nbIotOnOff::off()
 
 bool Sodaq_nbIotOnOff::isOn()
 {
-#if defined(ARDUINO_ARCH_AVR)
+    #if defined(ARDUINO_ARCH_AVR)
     // Use the onoff pin, which is close to useless
     bool status = digitalRead(_onoffPin);
     return status;
-#elif defined(ARDUINO_ARCH_SAMD)
+    #elif defined(ARDUINO_ARCH_SAMD)
     // There is no status pin. On SAMD we cannot read back the onoff pin.
     // So, our own status is all we have.
     return _onoff_status;
-#endif
-
+    #endif
+    
     // Let's assume it is on.
     return true;
 }
