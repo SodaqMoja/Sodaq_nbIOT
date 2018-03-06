@@ -228,6 +228,8 @@ ResponseTypes Sodaq_nbIOT::readResponse(char* buffer, size_t size,
                 debugPrintLn(dataLength);
                 _receivedUDPResponseSocket = socketID;
                 _pendingUDPBytes = dataLength;
+
+                continue;
             }
             
             if (startsWith(STR_AT, buffer)) {
