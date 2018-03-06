@@ -708,7 +708,7 @@ ResponseTypes Sodaq_nbIOT::_udpURCParser(ResponseTypes& response, const char* bu
         return ResponseError;
     }
     
-    if (sscanf(buffer, "%d,\"%[^\"]\",%d,%d,\"%[^\"]\",%d", &packet->socketID, packet->ip, &packet->port, &packet->length, &data[0], &packet->remainingLength) == 7) {
+    if (sscanf(buffer, SCNu8 ",\"%[^\"]\",%d,%d,\"%[^\"]\",%d", &packet->socketID, packet->ip, &packet->port, &packet->length, &data[0], &packet->remainingLength) == 7) {
         return ResponseEmpty;
     }
     
