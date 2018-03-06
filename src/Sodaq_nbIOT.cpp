@@ -20,8 +20,12 @@
 
 #include "Sodaq_nbIOT.h"
 #include <Sodaq_wdt.h>
+#include "time.h"
 
 //#define DEBUG
+
+#define EPOCH_TIME_OFF      946684800  // This is 1st January 2000, 00:00:00 in epoch time
+#define EPOCH_TIME_YEAR_OFF 100        // years since 1900
 
 #define STR_AT "AT"
 #define STR_RESPONSE_OK "OK"
@@ -291,6 +295,13 @@ bool Sodaq_nbIOT::setApn(const char* apn)
     println("\"");
     
     return (readResponse() == ResponseOK);
+}
+
+bool Sodaq_nbIOT::getEpoch(uint32_t* epoch)
+{
+    println("AT+CCLK?");
+
+    return readResponse<uint32_t, uint8_t>(_cclkParser, epoch, NULL) == ResponseOK;
 }
 
 bool Sodaq_nbIOT::setCdp(const char* cdp)
@@ -892,6 +903,41 @@ ResponseTypes Sodaq_nbIOT::_csqParser(ResponseTypes& response, const char* buffe
     }
     
     if (sscanf(buffer, "+CSQ: %d,%d", rssi, ber) == 2) {
+        return ResponseEmpty;
+    }
+    
+    return ResponseError;
+}
+
+uint32_t Sodaq_nbIOT::convertDatetimeToEpoch(int y, int m, int d, int h, int min, int sec)
+{
+    struct tm tm;
+    
+    tm.tm_isdst = -1;
+    tm.tm_yday = 0;
+    tm.tm_wday = 0;
+    tm.tm_year = y + EPOCH_TIME_YEAR_OFF;
+    tm.tm_mon = m - 1;
+    tm.tm_mday = d;
+    tm.tm_hour = h;
+    tm.tm_min = min;
+    tm.tm_sec = sec;
+    
+    return mktime(&tm);
+}
+
+ResponseTypes Sodaq_nbIOT::_cclkParser(ResponseTypes& response, const char* buffer, size_t size,
+                                       uint32_t* epoch, uint8_t* dummy)
+{
+    if (!epoch) {
+        return ResponseError;
+    }
+    
+    // format: "yy/MM/dd,hh:mm:ss+TZ
+    int y, m, d, h, min, sec, tz;
+    
+    if (sscanf(buffer, "+CCLK: %d/%d/%d,%d:%d:%d+%d", &y, &m, &d, &h, &min, &sec, &tz) == 7) {
+        *epoch = convertDatetimeToEpoch(y, m, d, h, min, sec);
         return ResponseEmpty;
     }
     

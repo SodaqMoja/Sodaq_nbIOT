@@ -52,6 +52,7 @@ class Sodaq_nbIOT: public Sodaq_AT_Device
         bool setIndicationsActive(bool on);
         bool setApn(const char* apn);
         bool setCdp(const char* cdp);
+        bool getEpoch(uint32_t* epoch);
         bool setBand(uint8_t band);
         bool setVerboseErrors(bool on);
         
@@ -175,7 +176,9 @@ class Sodaq_nbIOT: public Sodaq_AT_Device
         void reboot();
         
         size_t socketReceive(SaraN2UDPPacketMetadata* packet, char* buffer, size_t size);
-        
+        static uint32_t convertDatetimeToEpoch(int y, int m, int d, int h, int min, int sec);
+
+        static ResponseTypes _cclkParser(ResponseTypes& response, const char* buffer, size_t size, uint32_t* epoch, uint8_t* dummy);
         static ResponseTypes _csqParser(ResponseTypes& response, const char* buffer, size_t size, int* rssi, int* ber);
         static ResponseTypes _createSocketParser(ResponseTypes& response, const char* buffer, size_t size, uint8_t* socket, uint8_t* dummy);
         static ResponseTypes _udpURCParser(ResponseTypes& response, const char* buffer, size_t size, SaraN2UDPPacketMetadata* packet, char* data);
