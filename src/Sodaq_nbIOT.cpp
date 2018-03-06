@@ -526,7 +526,6 @@ bool Sodaq_nbIOT::attachGprs(uint32_t timeout)
 
 int Sodaq_nbIOT::createSocket(uint16_t localPort)
 {
-    purgeAllResponsesRead();
     // only Datagram/UDP is supported
     print("AT+NSOCR=\"DGRAM\",17,");
     print(localPort);
