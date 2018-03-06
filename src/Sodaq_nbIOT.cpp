@@ -202,11 +202,22 @@ ResponseTypes Sodaq_nbIOT::readResponse(char* buffer, size_t size,
             debugPrint("[rdResp]: ");
             debugPrintLn(buffer);
 
-            int socketID;
-            int dataLength;
-            
-            // Handle socket URC
-            if (sscanf(buffer, "+NSONMI: %d,%d", &socketID, &dataLength) == 2) {
+            int param1, param2;
+            if (sscanf(buffer, "+UFOTAS: %d,%d", &param1, &param2) == 2) { // Handle FOTA URC
+                uint16_t blkRm = param1;
+                uint8_t transferStatus = param2;
+
+                debugPrint("Unsolicited: FOTA: ");
+                debugPrint(blkRm);
+                debugPrint(", ");
+                debugPrintLn(transferStatus);
+                
+                continue; 
+            }
+            else if (sscanf(buffer, "+NSONMI: %d,%d", &param1, &param2) == 2) { // Handle socket URC
+                int socketID = param1;
+                int dataLength = param2;
+
                 debugPrint("Unsolicited: Socket ");
                 debugPrint(socketID);
                 debugPrint(": ");
