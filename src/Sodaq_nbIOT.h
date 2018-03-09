@@ -159,7 +159,7 @@ class Sodaq_nbIOT: public Sodaq_AT_Device
         // This is the minimum required RSSI to continue making the connection
         // Use convertCSQ2RSSI if you have a CSQ value
         int _minRSSI;
-        
+
         bool _isSaraR4XX;
         
         // flag indicating UDP response via URC
@@ -178,6 +178,7 @@ class Sodaq_nbIOT: public Sodaq_AT_Device
         bool checkAndApplyNconfig();
         void reboot();
         
+        // For sara R4XX, receiving in chunks does NOT work, you have to receive the full packet
         size_t socketReceive(SaraN2UDPPacketMetadata* packet, char* buffer, size_t size);
         static uint32_t convertDatetimeToEpoch(int y, int m, int d, int h, int min, int sec);
 

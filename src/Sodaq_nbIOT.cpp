@@ -165,7 +165,7 @@ bool Sodaq_nbIOT::setVerboseErrors(bool on)
         println(on ? "2" : "0"); // r4 supports verbose error messages
     }
     else {
-    println(on ? "1" : "0"); // 2 is not supported on the n2, according to AT command manual
+        println(on ? "1" : "0"); // 2 is not supported on the n2, according to AT command manual
     }
     
     return (readResponse() == ResponseOK);
@@ -175,11 +175,11 @@ bool Sodaq_nbIOT::setIndicationsActive(bool on)
 {
     if (!_isSaraR4XX) {
         // TODO: this has no 4X equivalent ?
-    print("AT+NSMI=");
-    println(on ? "1" : "0");
-    if (readResponse() != ResponseOK) {
-        return false;
-    }
+        print("AT+NSMI=");
+        println(on ? "1" : "0");
+        if (readResponse() != ResponseOK) {
+            return false;
+        }
     }
     
     if (_isSaraR4XX) {
@@ -187,8 +187,8 @@ bool Sodaq_nbIOT::setIndicationsActive(bool on)
         println(on ? "1" : "0");
     }
     else {
-    print("AT+NNMI=");
-    println(on ? "1" : "0");
+        print("AT+NNMI=");
+        println(on ? "1" : "0");
     }
     
     return (readResponse() == ResponseOK);
@@ -199,7 +199,7 @@ bool Sodaq_nbIOT::setIndicationsActive(bool on)
 
     Notice that we're collecting URC's here. And in the process we could
     be updating:
-      _socketPendingBytes[] if +UUSORD: is seen
+      _socketPendingBytes[] if +NSONMI/UUSORF: is seen
       _socketClosedBit[] if +UUSOCL: is seen
 */
 ResponseTypes Sodaq_nbIOT::readResponse(char* buffer, size_t size,
@@ -400,21 +400,21 @@ bool Sodaq_nbIOT::connect(const char* apn, const char* cdp, const char* forceOpe
 
     if (!_isSaraR4XX) {
 
-    if (!setBand(band)) {
-        return false;
-    }
+        if (!setBand(band)) {
+            return false;
+        }
+
+        if (!checkAndApplyNconfig()) {
+            return false;
+        }
+
+        reboot();
     
-    if (!checkAndApplyNconfig()) {
-        return false;
-    }
-    
-    reboot();
-    
-    if (!on()) {
-        return false;
-    }
-    
-    purgeAllResponsesRead();
+        if (!on()) {
+            return false;
+        }
+        
+        purgeAllResponsesRead();
 
         if (!setVerboseErrors(true)) {
             return false;
@@ -435,10 +435,10 @@ bool Sodaq_nbIOT::connect(const char* apn, const char* cdp, const char* forceOpe
         readResponse();
     }
     else {
-    println("AT+NBAND?");
-    readResponse();
-    println("AT+NCONFIG?");
-    readResponse();
+        println("AT+NBAND?");
+        readResponse();
+        println("AT+NCONFIG?");
+        readResponse();
     }
 #endif
 
@@ -496,7 +496,7 @@ void Sodaq_nbIOT::reboot()
         println("AT+CFUN=15"); // reset modem + sim
     }
     else {
-    println("AT+NRB");
+        println("AT+NRB");
     }
     
     // wait up to 2000ms for the modem to come up
@@ -596,7 +596,7 @@ bool Sodaq_nbIOT::attachGprs(uint32_t timeout)
         }
         
         // println("AT+CGATT=1");
-        // readResponse(); // get Error 51 Command implemented but currently disabled
+        // readResponse(); // get Error 51 Command implemented but currently disabled on N2
         
         //if (readResponse() == ResponseOK) {
         //    return true;
@@ -620,10 +620,10 @@ int Sodaq_nbIOT::createSocket(uint16_t localPort)
         println(localPort);
     }
     else {
-    // only Datagram/UDP is supported
-    print("AT+NSOCR=\"DGRAM\",17,");
-    print(localPort);
-    println(",1");
+        // only Datagram/UDP is supported
+        print("AT+NSOCR=\"DGRAM\",17,");
+        print(localPort);
+        println(",1");
     }
     
     uint8_t socket;
@@ -675,7 +675,7 @@ int Sodaq_nbIOT::socketSend(uint8_t socket, const char* remoteIP, const uint16_t
         print("AT+USOST=");
     }
     else {
-    print("AT+NSOST=");
+        print("AT+NSOST=");
     }
     print(socket);
     print(',');
@@ -686,7 +686,7 @@ int Sodaq_nbIOT::socketSend(uint8_t socket, const char* remoteIP, const uint16_t
     print(remotePort);
     print(',');
     if (_isSaraR4XX) {
-    print(size);
+        print(size);
     }
     else {
         print(size / 2);
@@ -721,7 +721,7 @@ bool Sodaq_nbIOT::waitForUDPResponse(uint32_t timeoutMS)
             readResponse();
         }
         else {
-        isAlive();
+            isAlive();
         }
         sodaq_wdt_safe_delay(10);
     }
@@ -751,7 +751,7 @@ size_t Sodaq_nbIOT::socketReceive(SaraN2UDPPacketMetadata* packet, char* buffer,
         print("AT+USORF=");
     }
     else {
-    print("AT+NSORF=");
+        print("AT+NSORF=");
     }
     print(_receivedUDPResponseSocket);
     print(',');
@@ -759,7 +759,7 @@ size_t Sodaq_nbIOT::socketReceive(SaraN2UDPPacketMetadata* packet, char* buffer,
         println(size/2);
     }
     else {
-    println(size);
+        println(size);
     }
     
     if (readResponse<SaraN2UDPPacketMetadata, char>(_udpURCParser, packet, buffer) == ResponseOK) {
@@ -817,7 +817,7 @@ ResponseTypes Sodaq_nbIOT::_createSocketParser(ResponseTypes& response, const ch
         
         return ResponseEmpty;
     }
-    
+
     if (sscanf(buffer, "+USOCR: %d", &value) == 1) {
         *socket = value;
 
@@ -843,7 +843,7 @@ ResponseTypes Sodaq_nbIOT::_sendSocketParser(ResponseTypes& response, const char
         
         return ResponseEmpty;
     }
-    
+
     if (sscanf(buffer, "+USOST: %d,%d", &value1, &value2) == 2) {
         *socket = value1;
         *length = value2;
@@ -859,7 +859,7 @@ ResponseTypes Sodaq_nbIOT::_udpURCParser(ResponseTypes& response, const char* bu
     if (!packet) {
         return ResponseError;
     }
-    
+
     int v;
 
     if (sscanf(buffer, "%1,\"%[^\"]\",%d,%d,\"%[^\"]\",%d", &v, packet->ip, &packet->port, &packet->length, data, &packet->remainingLength) == 6) {
@@ -868,13 +868,13 @@ ResponseTypes Sodaq_nbIOT::_udpURCParser(ResponseTypes& response, const char* bu
         }
         return ResponseEmpty;
     }
-    
+
     if (sscanf(buffer, "+USORF: %d,\"%[^\"]\",%d,%d,\"%[^\"]\"", &v, packet->ip, &packet->port, &packet->length, data) == 5) {
         if (v < 256) {
             packet->socketID = v;
         }
-    return ResponseEmpty;
-}
+        return ResponseEmpty;
+    }
 
     return ResponseError;
 }
