@@ -379,6 +379,12 @@ bool Sodaq_nbIOT::connect(const char* apn, const char* cdp, const char* forceOpe
     
     purgeAllResponsesRead();
     
+    if (!setVerboseErrors(true)) {
+        return false;
+    }
+
+    if (!_isSaraR4XX) {
+
     if (!setBand(band)) {
         return false;
     }
@@ -393,14 +399,32 @@ bool Sodaq_nbIOT::connect(const char* apn, const char* cdp, const char* forceOpe
         return false;
     }
     
-
     purgeAllResponsesRead();
 
+        if (!setVerboseErrors(true)) {
+            return false;
+        }
+    }
+
+
+    if (_isSaraR4XX) {
+        useNarrowband();
+        // set data transfer to hex mode
+        println("AT+UDCONF=1");
+        readResponse();
+    }
+
 #ifdef DEBUG
+    if (_isSaraR4XX) {
+        println("AT+URAT?");
+        readResponse();
+    }
+    else {
     println("AT+NBAND?");
     readResponse();
     println("AT+NCONFIG?");
     readResponse();
+    }
 #endif
 
     if (!setRadioActive(false)) {
@@ -433,8 +457,6 @@ bool Sodaq_nbIOT::connect(const char* apn, const char* cdp, const char* forceOpe
     if (!waitForSignalQuality()) {
         return false;
     }
-    
-    setVerboseErrors(true);
     
     if (!attachGprs()) {
         return false;
