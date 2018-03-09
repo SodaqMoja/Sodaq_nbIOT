@@ -64,7 +64,7 @@ class Sodaq_nbIOT: public Sodaq_AT_Device
         uint32_t getDefaultBaudrate() { return 9600; };
         
         // Initializes the modem instance. Sets the modem stream and the on-off power pins.
-        void init(Stream& stream, int8_t onoffPin, int8_t txEnablePin = -1);
+        void init(Stream& stream, int8_t onoffPin, int8_t txEnablePin = -1, int8_t saraR4XXTogglePin = -1);
         
         bool overrideNconfigParam(const char* param, bool value);
 
@@ -159,6 +159,8 @@ class Sodaq_nbIOT: public Sodaq_AT_Device
         // This is the minimum required RSSI to continue making the connection
         // Use convertCSQ2RSSI if you have a CSQ value
         int _minRSSI;
+        
+        bool _isSaraR4XX;
         
         // flag indicating UDP response via URC
         int _receivedUDPResponseSocket = 0;

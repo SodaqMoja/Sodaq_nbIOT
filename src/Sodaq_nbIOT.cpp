@@ -95,12 +95,13 @@ class Sodaq_nbIotOnOff : public Sodaq_OnOffBee
 {
     public:
         Sodaq_nbIotOnOff();
-        void init(int onoffPin);
+        void init(int onoffPin, int8_t saraR4XXTogglePin = -1);
         void on();
         void off();
         bool isOn();
     private:
         int8_t _onoffPin;
+        int8_t _saraR4XXTogglePin;
         bool _onoff_status;
 };
 
@@ -129,15 +130,20 @@ bool Sodaq_nbIOT::isAlive()
 }
 
 // Initializes the modem instance. Sets the modem stream and the on-off power pins.
-void Sodaq_nbIOT::init(Stream& stream, int8_t onoffPin, int8_t txEnablePin)
+void Sodaq_nbIOT::init(Stream& stream, int8_t onoffPin, int8_t txEnablePin, int8_t saraR4XXTogglePin)
 {
     debugPrintLn("[init] started.");
+
+    _isSaraR4XX = saraR4XXTogglePin != -1;
+    if (_isSaraR4XX) {
+        debugPrintLn("Enabling sara R4XX functionality");
+    }
 
     initBuffer(); // safe to call multiple times
     
     setModemStream(stream);
     
-    sodaq_nbIotOnOff.init(onoffPin);
+    sodaq_nbIotOnOff.init(onoffPin, saraR4XXTogglePin);
     _onoff = &sodaq_nbIotOnOff;
     
     setTxEnablePin(txEnablePin);
@@ -1023,7 +1029,7 @@ Sodaq_nbIotOnOff::Sodaq_nbIotOnOff()
 }
 
 // Initializes the instance
-void Sodaq_nbIotOnOff::init(int onoffPin)
+void Sodaq_nbIotOnOff::init(int onoffPin, int8_t saraR4XXTogglePin)
 {
     if (onoffPin >= 0) {
         _onoffPin = onoffPin;
@@ -1031,12 +1037,24 @@ void Sodaq_nbIotOnOff::init(int onoffPin)
         digitalWrite(_onoffPin, LOW);
         pinMode(_onoffPin, OUTPUT);
     }
+
+    // always set this because its optional and can be -1
+    _saraR4XXTogglePin = saraR4XXTogglePin;
+    if (saraR4XXTogglePin >= 0) {
+        pinMode(_saraR4XXTogglePin, OUTPUT);
+    }
 }
 
 void Sodaq_nbIotOnOff::on()
 {
     if (_onoffPin >= 0) {
         digitalWrite(_onoffPin, HIGH);
+    }
+
+    if (_saraR4XXTogglePin >= 0) {
+        digitalWrite(_saraR4XXTogglePin, LOW);
+        sodaq_wdt_safe_delay(2000);
+        pinMode(_saraR4XXTogglePin, INPUT);
     }
 
     _onoff_status = true;
