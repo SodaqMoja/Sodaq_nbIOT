@@ -314,6 +314,10 @@ bool Sodaq_nbIOT::getEpoch(uint32_t* epoch)
 
 bool Sodaq_nbIOT::setCdp(const char* cdp)
 {
+    if (_isSaraR4XX) {
+        debugPrintLn("Set CDP not supported for R4XX");
+        return true;
+    }
     print("AT+NCDP=\"");
     print(cdp);
     println("\"");
@@ -323,6 +327,10 @@ bool Sodaq_nbIOT::setCdp(const char* cdp)
 
 bool Sodaq_nbIOT::setBand(uint8_t band)
 {
+    if (_isSaraR4XX) {
+        debugPrintLn("Set BAND not supported for R4XX");
+        return true;
+    }
     print("AT+NBAND=");
     println(band);
     
@@ -432,6 +440,10 @@ void Sodaq_nbIOT::reboot()
 
 bool Sodaq_nbIOT::checkAndApplyNconfig()
 {
+    if (_isSaraR4XX) {
+        debugPrintLn("NCONFIG not supported by R4XX");
+        return true;
+    }
     bool applyParam[nConfigCount];
     
     println("AT+NCONFIG?");
@@ -457,6 +469,10 @@ bool Sodaq_nbIOT::checkAndApplyNconfig()
 
 bool Sodaq_nbIOT::setNconfigParam(const char* param, const char* value)
 {
+    if (_isSaraR4XX) {
+        debugPrintLn("set NCONFIG param not supported by R4XX");
+        return true;
+    }
     print("AT+NCONFIG=\"");
     print(param);
     print("\",\"");
@@ -549,14 +565,18 @@ int Sodaq_nbIOT::createSocket(uint16_t localPort)
 bool Sodaq_nbIOT::closeSocket(uint8_t socketID)
 {
     // only Datagram/UDP is supported
-    print("AT+NSOCL=");
+        print("AT+NSOCL=");
     println(socketID);
     
     return readResponse() == ResponseOK;
 }
 
-int Sodaq_nbIOT::ping(char* ip)
+bool Sodaq_nbIOT::ping(char* ip)
 {
+    if (_isSaraR4XX) {
+        debugPrintLn("PING not supported by R4XX");
+        return false;
+    }
     print("AT+NPING=");
     print("\"");
     print(ip);
@@ -953,6 +973,10 @@ ResponseTypes Sodaq_nbIOT::_cclkParser(ResponseTypes& response, const char* buff
 
 bool Sodaq_nbIOT::sendMessage(const uint8_t* buffer, size_t size)
 {
+    if (_isSaraR4XX) {
+        debugPrintLn("Messages not supported for sara R4XX");
+        return false;
+    }
     if (size > 512) {
         return false;
     }
@@ -973,6 +997,10 @@ bool Sodaq_nbIOT::sendMessage(const uint8_t* buffer, size_t size)
 
 int Sodaq_nbIOT::getSentMessagesCount(SentMessageStatus filter)
 {
+    if (_isSaraR4XX) {
+        debugPrintLn("Messages not supported for sara R4XX");
+        return 0;
+    }
     println("AT+NQMGS");
     
     uint16_t pendingCount = 0;

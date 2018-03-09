@@ -95,7 +95,7 @@ class Sodaq_nbIOT: public Sodaq_AT_Device
         size_t socketReceiveBytes(uint8_t* buffer, size_t length, SaraN2UDPPacketMetadata* p = NULL);
         size_t getPendingUDPBytes();
         bool hasPendingUDPBytes();
-        int ping(char* ip);
+        bool ping(char* ip);
         bool closeSocket(uint8_t socket);
         bool waitForUDPResponse(uint32_t timeoutMS = DEFAULT_UDP_TIMOUT_MS);
         
