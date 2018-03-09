@@ -351,6 +351,17 @@ bool Sodaq_nbIOT::setBand(uint8_t band)
     return (readResponse() == ResponseOK);
 }
 
+bool Sodaq_nbIOT::useNarrowband()
+{
+    println("AT+URAT=?");
+    readResponse();
+
+
+    println("AT+URAT=99,8");
+
+    return (readResponse() == ResponseOK);
+}
+
 void Sodaq_nbIOT::purgeAllResponsesRead()
 {
     uint32_t start = millis();
