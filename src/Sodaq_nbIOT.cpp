@@ -26,6 +26,7 @@
 
 #define EPOCH_TIME_OFF      946684800  // This is 1st January 2000, 00:00:00 in epoch time
 #define EPOCH_TIME_YEAR_OFF 100        // years since 1900
+#define COPS_TIMEOUT 180000
 
 #define STR_AT "AT"
 #define STR_RESPONSE_OK "OK"
@@ -400,7 +401,7 @@ bool Sodaq_nbIOT::connect(const char* apn, const char* cdp, const char* forceOpe
         print(forceOperator);
         println("\"");
         
-        if (readResponse() != ResponseOK) {
+        if (readResponse(NULL, COPS_TIMEOUT) != ResponseOK) {
             return false;
         }
     }
