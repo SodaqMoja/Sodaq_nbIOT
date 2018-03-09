@@ -238,7 +238,22 @@ ResponseTypes Sodaq_nbIOT::readResponse(char* buffer, size_t size,
                 
                 continue; 
             }
-            else if (sscanf(buffer, "+NSONMI: %d,%d", &param1, &param2) == 2) { // Handle socket URC
+            else if (!_isSaraR4XX && sscanf(buffer, "+NSONMI: %d,%d", &param1, &param2) == 2) { // Handle socket URC for N2
+                int socketID = param1;
+                int dataLength = param2;
+
+                debugPrint("Unsolicited: Socket ");
+                debugPrint(socketID);
+                debugPrint(": ");
+                debugPrintLn(dataLength);
+                _receivedUDPResponseSocket = socketID;
+                _pendingUDPBytes = dataLength;
+
+                continue;
+            }
+            else if (_isSaraR4XX && 
+                    (sscanf(buffer, "+UUSORF: %d,%d", &param1, &param2) == 2 ||
+                    sscanf(buffer, "+USORF: %d,%d", &param1, &param2) == 2) ){ // Handle socket URC for R4
                 int socketID = param1;
                 int dataLength = param2;
 
