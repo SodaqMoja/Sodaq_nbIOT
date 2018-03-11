@@ -135,7 +135,7 @@ void Sodaq_nbIOT::init(Stream& stream, int8_t onoffPin, int8_t txEnablePin, int8
 {
     debugPrintLn("[init] started.");
 
-    _isSaraR4XX = saraR4XXTogglePin != -1;
+    _isSaraR4XX = (saraR4XXTogglePin != -1);
     if (_isSaraR4XX) {
         debugPrintLn("Enabling sara R4XX functionality");
     }
@@ -174,7 +174,7 @@ bool Sodaq_nbIOT::setVerboseErrors(bool on)
 bool Sodaq_nbIOT::setIndicationsActive(bool on)
 {
     if (!_isSaraR4XX) {
-        // TODO: this has no 4X equivalent ?
+        // TODO: this is the N2 command, there is no R4XX equivalent command
         print("AT+NSMI=");
         println(on ? "1" : "0");
         if (readResponse() != ResponseOK) {
