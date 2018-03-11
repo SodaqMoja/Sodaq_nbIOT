@@ -366,7 +366,7 @@ bool Sodaq_nbIOT::setBand(uint8_t band)
     return (readResponse() == ResponseOK);
 }
 
-bool Sodaq_nbIOT::useNarrowband()
+bool Sodaq_nbIOT::setR4XXToNarrowband()
 {
     println("AT+URAT=?");
     readResponse();
@@ -423,7 +423,7 @@ bool Sodaq_nbIOT::connect(const char* apn, const char* cdp, const char* forceOpe
 
 
     if (_isSaraR4XX) {
-        useNarrowband();
+        setR4XXToNarrowband();
         // set data transfer to hex mode
         println("AT+UDCONF=1");
         readResponse();

@@ -170,7 +170,7 @@ class Sodaq_nbIOT: public Sodaq_AT_Device
         static size_t ipToString(IP_t ip, char* buffer, size_t size);
         static bool isValidIPv4(const char* str);
 
-        bool useNarrowband();
+        bool setR4XXToNarrowband();
 
         bool waitForSignalQuality(uint32_t timeout = 5L * 60L * 1000);
         bool attachGprs(uint32_t timeout = 10L * 60L * 1000);
