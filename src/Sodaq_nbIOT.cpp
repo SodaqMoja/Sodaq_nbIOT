@@ -345,7 +345,7 @@ bool Sodaq_nbIOT::setCdp(const char* cdp)
 {
     if (_isSaraR4XX) {
         debugPrintLn("Set CDP not supported for R4XX");
-        return true;
+        return false;
     }
     print("AT+NCDP=\"");
     print(cdp);
@@ -358,7 +358,7 @@ bool Sodaq_nbIOT::setBand(uint8_t band)
 {
     if (_isSaraR4XX) {
         debugPrintLn("Set BAND not supported for R4XX");
-        return true;
+        return false;
     }
     print("AT+NBAND=");
     println(band);
@@ -509,7 +509,7 @@ bool Sodaq_nbIOT::checkAndApplyNconfig()
 {
     if (_isSaraR4XX) {
         debugPrintLn("NCONFIG not supported by R4XX");
-        return true;
+        return false;
     }
     bool applyParam[nConfigCount];
     
@@ -538,7 +538,7 @@ bool Sodaq_nbIOT::setNconfigParam(const char* param, const char* value)
 {
     if (_isSaraR4XX) {
         debugPrintLn("set NCONFIG param not supported by R4XX");
-        return true;
+        return false;
     }
     print("AT+NCONFIG=\"");
     print(param);
