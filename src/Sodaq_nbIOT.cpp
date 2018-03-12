@@ -667,7 +667,7 @@ bool Sodaq_nbIOT::ping(const char* ip)
     return readResponse() == ResponseOK;
 }
 
-int Sodaq_nbIOT::socketSend(uint8_t socket, const char* remoteIP, const uint16_t remotePort, char* buffer, size_t size)
+size_t Sodaq_nbIOT::socketSend(uint8_t socket, const char* remoteIP, const uint16_t remotePort, char* buffer, size_t size)
 {
     if (size > 512) {
         debugPrintLn("SocketSend exceeded maximum buffer size!");
@@ -701,9 +701,9 @@ int Sodaq_nbIOT::socketSend(uint8_t socket, const char* remoteIP, const uint16_t
     println('\"');
     
     uint8_t retSocketID;
-    uint8_t sentLength;
+    size_t sentLength;
     
-    if (readResponse<uint8_t, uint8_t>(_sendSocketParser, &retSocketID, &sentLength) == ResponseOK) {
+    if (readResponse<uint8_t, size_t>(_sendSocketParser, &retSocketID, &sentLength) == ResponseOK) {
         return socket;
     }
     
@@ -766,7 +766,7 @@ size_t Sodaq_nbIOT::socketReceive(SaraN2UDPPacketMetadata* packet, char* buffer,
         println(size);
     }
     
-    if (readResponse<SaraN2UDPPacketMetadata, char>(_udpURCParser, packet, buffer) == ResponseOK) {
+    if (readResponse<SaraN2UDPPacketMetadata, char>(_udpReadSocketParser, packet, buffer) == ResponseOK) {
         // update pending bytes
         _pendingUDPBytes -= packet->length;
         return packet->length;
@@ -780,13 +780,13 @@ size_t Sodaq_nbIOT::socketReceiveHex(char* buffer, size_t length, SaraN2UDPPacke
 {
     SaraN2UDPPacketMetadata packet;
 
-    size_t l = length;
+    size_t receiveSize = length;
     if (!_isSaraR4XX) {
-        l = l / 2;
+        receiveSize = receiveSize / 2;
     }
 
-    int size = min(l, _pendingUDPBytes);
-    return socketReceive(p ? p : &packet, buffer, size);
+    receiveSize = min(receiveSize, _pendingUDPBytes);
+    return socketReceive(p ? p : &packet, buffer, receiveSize);
 }
 
 size_t Sodaq_nbIOT::socketReceiveBytes(uint8_t* buffer, size_t length, SaraN2UDPPacketMetadata* p)
@@ -814,16 +814,26 @@ ResponseTypes Sodaq_nbIOT::_createSocketParser(ResponseTypes& response, const ch
         return ResponseError;
     }
     
-    int value;
+    int socketID;
     
-    if (sscanf(buffer, "%d", &value) == 1) {
-        *socket = value;
+    if (sscanf(buffer, "%d", &socketID) == 1) {
+        if (socketID <= UINT8_MAX) {
+            *socket = socketID;
+        }
+        else {
+            return ResponseError;
+        }
         
         return ResponseEmpty;
     }
 
-    if (sscanf(buffer, "+USOCR: %d", &value) == 1) {
-        *socket = value;
+    if (sscanf(buffer, "+USOCR: %d", &socketID) == 1) {
+        if (socketID <= UINT8_MAX) {
+            *socket = socketID;
+        }
+        else {
+            return ResponseError;
+        }
 
         return ResponseEmpty;
     }
@@ -832,25 +842,47 @@ ResponseTypes Sodaq_nbIOT::_createSocketParser(ResponseTypes& response, const ch
 }
 
 ResponseTypes Sodaq_nbIOT::_sendSocketParser(ResponseTypes& response, const char* buffer, size_t size,
-        uint8_t* socket, uint8_t* length)
+        uint8_t* socket, size_t* length)
 {
     if (!socket) {
         return ResponseError;
     }
     
-    int value1;
-    int value2;
+    int socketID;
+    int sendSize;
     
-    if (sscanf(buffer, "%d,%d", &value1, &value2) == 2) {
-        *socket = value1;
-        *length = value2;
+    if (sscanf(buffer, "%d,%d", &socketID, &sendSize) == 2) {
+        if (socketID <= UINT8_MAX) {
+            *socket = socketID;
+        }
+        else {
+            return ResponseError;
+        }
+    
+        if (socketID <= SIZE_MAX) {
+            *length = sendSize;
+        }
+        else {
+            return ResponseError;
+        }
         
         return ResponseEmpty;
     }
 
-    if (sscanf(buffer, "+USOST: %d,%d", &value1, &value2) == 2) {
-        *socket = value1;
-        *length = value2;
+    if (sscanf(buffer, "+USOST: %d,%d", &socketID, &sendSize) == 2) {
+        if (socketID <= UINT8_MAX) {
+            *socket = socketID;
+        }
+        else {
+            return ResponseError;
+        }
+
+        if (socketID <= SIZE_MAX) {
+            *length = sendSize;
+        }
+        else {
+            return ResponseError;
+        }
 
         return ResponseEmpty;
     }
@@ -858,24 +890,30 @@ ResponseTypes Sodaq_nbIOT::_sendSocketParser(ResponseTypes& response, const char
     return ResponseError;
 }
 
-ResponseTypes Sodaq_nbIOT::_udpURCParser(ResponseTypes& response, const char* buffer, size_t size, SaraN2UDPPacketMetadata* packet, char* data)
+ResponseTypes Sodaq_nbIOT::_udpReadSocketParser(ResponseTypes& response, const char* buffer, size_t size, SaraN2UDPPacketMetadata* packet, char* data)
 {
     if (!packet) {
         return ResponseError;
     }
 
-    int v;
+    int socketID;
 
-    if (sscanf(buffer, "%1,\"%[^\"]\",%d,%d,\"%[^\"]\",%d", &v, packet->ip, &packet->port, &packet->length, data, &packet->remainingLength) == 6) {
-        if (v < 256) {
-            packet->socketID = v;
+    if (sscanf(buffer, "%1,\"%[^\"]\",%d,%d,\"%[^\"]\",%d", &socketID, packet->ip, &packet->port, &packet->length, data, &packet->remainingLength) == 6) {
+        if (socketID <= UINT8_MAX) {
+            packet->socketID = socketID;
+        }
+        else {
+            return ResponseError;
         }
         return ResponseEmpty;
     }
 
-    if (sscanf(buffer, "+USORF: %d,\"%[^\"]\",%d,%d,\"%[^\"]\"", &v, packet->ip, &packet->port, &packet->length, data) == 5) {
-        if (v < 256) {
-            packet->socketID = v;
+    if (sscanf(buffer, "+USORF: %d,\"%[^\"]\",%d,%d,\"%[^\"]\"", &socketID, packet->ip, &packet->port, &packet->length, data) == 5) {
+        if (socketID <= UINT8_MAX) {
+            packet->socketID = socketID;
+        }
+        else {
+            return ResponseError;
         }
         return ResponseEmpty;
     }
@@ -883,6 +921,30 @@ ResponseTypes Sodaq_nbIOT::_udpURCParser(ResponseTypes& response, const char* bu
     return ResponseError;
 }
 
+
+
+ResponseTypes Sodaq_nbIOT::_messageReceiveParser(ResponseTypes& response, const char* buffer, size_t size, size_t* length, char* data)
+{
+    if (!length || !data) {
+        return ResponseError;
+    }
+
+    int receivedLength;
+
+    if (sscanf(buffer, "%d,%s", &receivedLength, data) == 2) {
+        // length contains the length of the passed buffer
+        // this guards against overflowing the passed buffer
+        if (receivedLength <= *length) {
+            *length = receivedLength;
+        }
+        else {
+            return ResponseError;
+        }
+        return ResponseEmpty;
+    }
+
+    return ResponseError;
+}
 bool connectSocket(uint8_t socket, const char* host, uint16_t port)
 {
     return false;

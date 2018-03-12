@@ -44,7 +44,7 @@ class Sodaq_nbIOT: public Sodaq_AT_Device
             Pending,
             Error
         };
-        
+
         struct ReceivedMessageStatus {
             uint16_t pending;
             uint16_t receivedSinceBoot;
@@ -96,7 +96,7 @@ class Sodaq_nbIOT: public Sodaq_AT_Device
         int8_t getLastRSSI() const { return _lastRSSI; }
         
         int createSocket(uint16_t localPort = 0);
-        int socketSend(uint8_t socket, const char* remoteIP, const uint16_t remotePort, char* buffer, size_t size);
+        size_t socketSend(uint8_t socket, const char* remoteIP, const uint16_t remotePort, char* buffer, size_t size);
         size_t socketReceiveHex(char* buffer, size_t length, SaraN2UDPPacketMetadata* p = NULL);
         size_t socketReceiveBytes(uint8_t* buffer, size_t length, SaraN2UDPPacketMetadata* p = NULL);
         size_t getPendingUDPBytes();
@@ -195,8 +195,9 @@ class Sodaq_nbIOT: public Sodaq_AT_Device
         static ResponseTypes _csqParser(ResponseTypes& response, const char* buffer, size_t size, int* rssi, int* ber);
 
         static ResponseTypes _createSocketParser(ResponseTypes& response, const char* buffer, size_t size, uint8_t* socket, uint8_t* dummy);
-        static ResponseTypes _udpURCParser(ResponseTypes& response, const char* buffer, size_t size, SaraN2UDPPacketMetadata* packet, char* data);
-        static ResponseTypes _sendSocketParser(ResponseTypes& response, const char* buffer, size_t size, uint8_t* socket, uint8_t* dummy);
+        static ResponseTypes _udpReadSocketParser(ResponseTypes& response, const char* buffer, size_t size, SaraN2UDPPacketMetadata* packet, char* data);
+        static ResponseTypes _sendSocketParser(ResponseTypes& response, const char* buffer, size_t size, uint8_t* socket, size_t* length);
+
         static ResponseTypes _nqmgsParser(ResponseTypes& response, const char* buffer, size_t size, uint16_t* pendingCount, uint16_t* errorCount);
         static ResponseTypes _nqmgrParser(ResponseTypes& response, const char* buffer, size_t size, ReceivedMessageStatus* status, uint8_t* dummy);
         static ResponseTypes _messageReceiveParser(ResponseTypes& response, const char* buffer, size_t size, size_t* length, char* data);
