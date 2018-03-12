@@ -111,7 +111,7 @@ class Sodaq_nbIOT: public Sodaq_AT_Device
         bool sendMessage(const uint8_t* buffer, size_t size);
         bool sendMessage(const char* str);
         bool sendMessage(String str);
-        bool receiveMessage(char* buffer, size_t size);
+        size_t receiveMessage(char* buffer, size_t size);
 
         int getSentMessagesCount(SentMessageStatus filter);
         bool getReceivedMessagesCount(ReceivedMessageStatus* status);

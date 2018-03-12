@@ -1233,19 +1233,30 @@ bool Sodaq_nbIOT::sendMessage(const uint8_t* buffer, size_t size)
     return (readResponse() == ResponseOK);
 }
 
-bool Sodaq_nbIOT::receiveMessage(char* buffer, size_t size)
+size_t Sodaq_nbIOT::receiveMessage(char* buffer, size_t size)
 {
     if (_isSaraR4XX) {
         debugPrintLn("Messages not supported for sara R4XX");
         return false;
     }
 
+    // init receiveSize to size, so that readResponse can check for buffer overflows
+    size_t receiveSize = size;
+
+    // when there is no buffered message, the parser is not executed
+    strcpy(buffer, "no_parser");
+
     println("AT+NMGR");
-    if (readResponse<size_t, char>(_messageReceiveParser, &size, buffer) == ResponseOK) {
-        return true;
+    if (readResponse<size_t, char>(_messageReceiveParser, &receiveSize, buffer) == ResponseOK) {
+        if (strcmp(buffer, "no_parser") == 0) {
+            return 0;
+        }
+        else {
+            return receiveSize;
+        }
     }
 
-    return false;
+    return 0;
 }
 
 int Sodaq_nbIOT::getSentMessagesCount(SentMessageStatus filter)
