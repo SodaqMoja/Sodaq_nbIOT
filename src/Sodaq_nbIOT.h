@@ -67,7 +67,9 @@ class Sodaq_nbIOT: public Sodaq_AT_Device
         
         // Returns the default baud rate of the modem.
         // To be used when initializing the modem stream for the first time.
-        uint32_t getSaraN2Baudrate() { return 9600; };
+
+        uint32_t getDefaultBaudrate() { return 9600; };
+        uint32_t getSaraN2Baudrate() { return getSaraN2Baudrate(); };
         uint32_t getSaraR4Baudrate() { return 115200; };
 
         
