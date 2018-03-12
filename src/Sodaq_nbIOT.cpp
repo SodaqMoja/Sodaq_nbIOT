@@ -649,10 +649,10 @@ bool Sodaq_nbIOT::closeSocket(uint8_t socketID)
     return readResponse() == ResponseOK;
 }
 
-bool Sodaq_nbIOT::ping(char* ip)
+bool Sodaq_nbIOT::ping(const char* ip)
 {
     if (_isSaraR4XX) {
-        debugPrintLn("PING not supported by R4XX");
+        debugPrintLn("Ping not supported by R4XX");
         return false;
     }
     print("AT+NPING=");
