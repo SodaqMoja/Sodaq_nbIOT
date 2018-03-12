@@ -45,6 +45,12 @@ class Sodaq_nbIOT: public Sodaq_AT_Device
             Error
         };
         
+        struct ReceivedMessageStatus {
+            uint16_t pending;
+            uint16_t receivedSinceBoot;
+            uint16_t droppedSinceBoot;
+        };
+        
         typedef ResponseTypes(*CallbackMethodPtr)(ResponseTypes& response, const char* buffer, size_t size,
                 void* parameter, void* parameter2);
                 
@@ -95,7 +101,6 @@ class Sodaq_nbIOT: public Sodaq_AT_Device
         size_t socketReceiveBytes(uint8_t* buffer, size_t length, SaraN2UDPPacketMetadata* p = NULL);
         size_t getPendingUDPBytes();
         bool hasPendingUDPBytes();
-        bool ping(char* ip);
         bool ping(const char* ip);
         bool closeSocket(uint8_t socket);
         bool waitForUDPResponse(uint32_t timeoutMS = DEFAULT_UDP_TIMOUT_MS);
@@ -104,7 +109,10 @@ class Sodaq_nbIOT: public Sodaq_AT_Device
         bool sendMessage(const uint8_t* buffer, size_t size);
         bool sendMessage(const char* str);
         bool sendMessage(String str);
+        bool receiveMessage(char* buffer, size_t size);
+
         int getSentMessagesCount(SentMessageStatus filter);
+        bool getReceivedMessagesCount(ReceivedMessageStatus* status);
     protected:
         // override
         ResponseTypes readResponse(char* buffer, size_t size, size_t* outSize, uint32_t timeout = SODAQ_AT_DEVICE_DEFAULT_READ_MS)
@@ -185,10 +193,14 @@ class Sodaq_nbIOT: public Sodaq_AT_Device
 
         static ResponseTypes _cclkParser(ResponseTypes& response, const char* buffer, size_t size, uint32_t* epoch, uint8_t* dummy);
         static ResponseTypes _csqParser(ResponseTypes& response, const char* buffer, size_t size, int* rssi, int* ber);
+
         static ResponseTypes _createSocketParser(ResponseTypes& response, const char* buffer, size_t size, uint8_t* socket, uint8_t* dummy);
         static ResponseTypes _udpURCParser(ResponseTypes& response, const char* buffer, size_t size, SaraN2UDPPacketMetadata* packet, char* data);
         static ResponseTypes _sendSocketParser(ResponseTypes& response, const char* buffer, size_t size, uint8_t* socket, uint8_t* dummy);
         static ResponseTypes _nqmgsParser(ResponseTypes& response, const char* buffer, size_t size, uint16_t* pendingCount, uint16_t* errorCount);
+        static ResponseTypes _nqmgrParser(ResponseTypes& response, const char* buffer, size_t size, ReceivedMessageStatus* status, uint8_t* dummy);
+        static ResponseTypes _messageReceiveParser(ResponseTypes& response, const char* buffer, size_t size, size_t* length, char* data);
+
         static ResponseTypes _cgattParser(ResponseTypes& response, const char* buffer, size_t size, uint8_t* result, uint8_t* dummy);
         static ResponseTypes _nconfigParser(ResponseTypes& response, const char* buffer, size_t size, bool* nconfigEqualsArray, uint8_t* dummy);
 };

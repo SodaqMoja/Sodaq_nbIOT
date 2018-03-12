@@ -1136,6 +1136,21 @@ bool Sodaq_nbIOT::sendMessage(const uint8_t* buffer, size_t size)
     return (readResponse() == ResponseOK);
 }
 
+bool Sodaq_nbIOT::receiveMessage(char* buffer, size_t size)
+{
+    if (_isSaraR4XX) {
+        debugPrintLn("Messages not supported for sara R4XX");
+        return false;
+    }
+
+    println("AT+NMGR");
+    if (readResponse<size_t, char>(_messageReceiveParser, &size, buffer) == ResponseOK) {
+        return true;
+    }
+
+    return false;
+}
+
 int Sodaq_nbIOT::getSentMessagesCount(SentMessageStatus filter)
 {
     if (_isSaraR4XX) {
@@ -1171,6 +1186,45 @@ ResponseTypes Sodaq_nbIOT::_nqmgsParser(ResponseTypes& response, const char* buf
     if (sscanf(buffer, "PENDING=%d,SENT=%*d,ERROR=%d", &pendingValue, &errorValue) == 2) {
         *pendingCount = pendingValue;
         *errorCount = errorValue;
+        
+        return ResponseEmpty;
+    }
+    
+    return ResponseError;
+}
+
+bool Sodaq_nbIOT::getReceivedMessagesCount(ReceivedMessageStatus* status)
+{
+    if (_isSaraR4XX) {
+        debugPrintLn("Messages not supported for sara R4XX");
+        return 0;
+    }
+    println("AT+NQMGS");
+
+    uint8_t dummy = 0;
+
+    if (readResponse<ReceivedMessageStatus, uint8_t>(_nqmgrParser, status, &dummy) == ResponseOK) {
+        return true;
+    }
+
+    return false;
+}
+
+ResponseTypes Sodaq_nbIOT::_nqmgrParser(ResponseTypes& response, const char* buffer, size_t size, ReceivedMessageStatus* status, uint8_t* dummy)
+{
+    if (!status || !dummy) {
+        return ResponseError;
+    }
+    
+    int buffered;
+    int received;
+    int dropped;
+
+    
+    if (sscanf(buffer, "BUFFERED=%d,RECEIVED=%d,DROPPED=%d", &buffered, &received, &dropped) == 2) {
+        status->pending = buffered;
+        status->receivedSinceBoot = received;
+        status->droppedSinceBoot = dropped;
         
         return ResponseEmpty;
     }
