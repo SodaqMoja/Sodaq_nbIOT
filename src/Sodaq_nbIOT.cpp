@@ -451,7 +451,11 @@ bool Sodaq_nbIOT::connect(const char* apn, const char* cdp, const char* forceOpe
         return false;
     }
 
-    if (!setApn(apn) || !setCdp(cdp)) {
+    if (!setApn(apn)) {
+        return false;
+    }
+
+    if (!_isSaraR4XX && !setCdp(cdp)) {
         return false;
     }
     
