@@ -197,6 +197,7 @@ class Sodaq_nbIOT: public Sodaq_AT_Device
         static ResponseTypes _createSocketParser(ResponseTypes& response, const char* buffer, size_t size, uint8_t* socket, uint8_t* dummy);
         static ResponseTypes _udpReadSocketParser(ResponseTypes& response, const char* buffer, size_t size, SaraN2UDPPacketMetadata* packet, char* data);
         static ResponseTypes _sendSocketParser(ResponseTypes& response, const char* buffer, size_t size, uint8_t* socket, size_t* length);
+        static ResponseTypes _udpReadURCParser(ResponseTypes& response, const char* buffer, size_t size, uint8_t* socket, size_t* length);
 
         static ResponseTypes _nqmgsParser(ResponseTypes& response, const char* buffer, size_t size, uint16_t* pendingCount, uint16_t* errorCount);
         static ResponseTypes _nqmgrParser(ResponseTypes& response, const char* buffer, size_t size, ReceivedMessageStatus* status, uint8_t* dummy);

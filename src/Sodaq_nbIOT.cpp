@@ -722,7 +722,14 @@ bool Sodaq_nbIOT::waitForUDPResponse(uint32_t timeoutMS)
             print(0);
             print(",");
             println(0); 
-            readResponse();
+
+            uint8_t socketID;
+            size_t length;
+
+            if (readResponse<uint8_t, size_t>(_udpReadURCParser, &socketID, &length) == ResponseOK) {
+                _receivedUDPResponseSocket = socketID;
+                _pendingUDPBytes = length;
+            }
         }
         else {
             isAlive();
@@ -858,7 +865,7 @@ ResponseTypes Sodaq_nbIOT::_sendSocketParser(ResponseTypes& response, const char
         else {
             return ResponseError;
         }
-    
+
         if (socketID <= SIZE_MAX) {
             *length = sendSize;
         }
@@ -945,6 +952,34 @@ ResponseTypes Sodaq_nbIOT::_messageReceiveParser(ResponseTypes& response, const 
 
     return ResponseError;
 }
+
+ResponseTypes Sodaq_nbIOT::_udpReadURCParser(ResponseTypes& response, const char* buffer, size_t size, 
+    uint8_t* socket, size_t* length)
+{
+    int socketID;
+    int receiveSize;
+
+    if (sscanf(buffer, "+USORF: %d,%d", &socketID, &receiveSize) == 2) {
+        if (socketID <= UINT8_MAX) {
+            *socket = socketID;
+        }
+        else {
+            return ResponseError;
+        }
+
+        if (socketID <= SIZE_MAX) {
+            *length = receiveSize;
+        }
+        else {
+            return ResponseError;
+        }
+
+        return ResponseEmpty;
+    }
+
+    return ResponseError;
+}
+
 bool connectSocket(uint8_t socket, const char* host, uint16_t port)
 {
     return false;
@@ -1241,17 +1276,17 @@ ResponseTypes Sodaq_nbIOT::_nqmgsParser(ResponseTypes& response, const char* buf
     if (!pendingCount || !errorCount) {
         return ResponseError;
     }
-    
+
     int pendingValue;
     int errorValue;
-    
+
     if (sscanf(buffer, "PENDING=%d,SENT=%*d,ERROR=%d", &pendingValue, &errorValue) == 2) {
         *pendingCount = pendingValue;
         *errorCount = errorValue;
-        
+
         return ResponseEmpty;
     }
-    
+
     return ResponseError;
 }
 
