@@ -905,7 +905,7 @@ ResponseTypes Sodaq_nbIOT::_udpReadSocketParser(ResponseTypes& response, const c
 
     int socketID;
 
-    if (sscanf(buffer, "%1,\"%[^\"]\",%d,%d,\"%[^\"]\",%d", &socketID, packet->ip, &packet->port, &packet->length, data, &packet->remainingLength) == 6) {
+    if (sscanf(buffer, "%d,\"%[^\"]\",%d,%d,\"%[^\"]\",%d", &socketID, packet->ip, &packet->port, &packet->length, data, &packet->remainingLength) == 6) {
         if (socketID <= UINT8_MAX) {
             packet->socketID = socketID;
         }
