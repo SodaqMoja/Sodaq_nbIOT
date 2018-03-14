@@ -936,7 +936,7 @@ ResponseTypes Sodaq_nbIOT::_messageReceiveParser(ResponseTypes& response, const 
         return ResponseError;
     }
 
-    int receivedLength;
+    size_t receivedLength;
 
     if (sscanf(buffer, "%d,%s", &receivedLength, data) == 2) {
         // length contains the length of the passed buffer
