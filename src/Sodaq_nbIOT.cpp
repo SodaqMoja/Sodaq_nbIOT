@@ -938,7 +938,7 @@ ResponseTypes Sodaq_nbIOT::_messageReceiveParser(ResponseTypes& response, const 
 
     size_t receivedLength;
 
-    if (sscanf(buffer, "%d,%s", &receivedLength, data) == 2) {
+    if (sscanf(buffer, "%d,\"%s\"", &receivedLength, data) == 2) {
         // length contains the length of the passed buffer
         // this guards against overflowing the passed buffer
         if (receivedLength <= *length) {
