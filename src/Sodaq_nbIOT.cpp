@@ -941,8 +941,8 @@ ResponseTypes Sodaq_nbIOT::_messageReceiveParser(ResponseTypes& response, const 
     if (sscanf(buffer, "%d,\"%s\"", &receivedLength, data) == 2) {
         // length contains the length of the passed buffer
         // this guards against overflowing the passed buffer
-        if (receivedLength <= *length) {
-            *length = receivedLength;
+        if (receivedLength * 2 <= *length) {
+            *length = receivedLength * 2;
         }
         else {
             return ResponseError;
@@ -1233,6 +1233,7 @@ bool Sodaq_nbIOT::sendMessage(const uint8_t* buffer, size_t size)
     return (readResponse() == ResponseOK);
 }
 
+// NOTE! Need to send data ( sendMessage() ) before receiving is possible through this method
 size_t Sodaq_nbIOT::receiveMessage(char* buffer, size_t size)
 {
     if (_isSaraR4XX) {
