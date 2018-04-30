@@ -68,8 +68,8 @@
 
 #define STARTUP_DELAY 5000
 
-const char* apn = "oceanconnect.t-mobile.nl";
-const char* cdp = "172.16.14.22";
+const char* apn = "cdp.iot.t-mobile.nl";
+const char* cdp = "172.27.131.100";
 const char* forceOperator = "20416"; // optional - depends on SIM / network
 
 Sodaq_nbIOT nbiot;
