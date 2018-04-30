@@ -57,7 +57,7 @@
 #define debugPrint(...)
 #endif
 
-#define DEFAULT_CID "1"
+#define DEFAULT_CID "0"
 
 #define NO_IP_ADDRESS ((IP_t)0)
 
@@ -85,7 +85,7 @@ typedef struct NameValuePair {
 const uint8_t nConfigCount = 6;
 static NameValuePair nConfig[nConfigCount] = {
     { "AUTOCONNECT", false },
-    { "CR_0354_0338_SCRAMBLING", false },
+    { "CR_0354_0338_SCRAMBLING", true },
     { "CR_0859_SI_AVOID", false },
     { "COMBINE_ATTACH", false },
     { "CELL_RESELECTION", false },
