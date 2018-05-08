@@ -91,7 +91,7 @@ void sendMessageThroughUDP()
     DEBUG_STREAM.println("Created socket!");
 
     char* buffer = "FFAAFF";
-    uint8_t size = strlen(buffer) / 2;
+    uint8_t size = strlen(buffer);
     // "195.34.89.241" : 7 is the ublox echo service
     int lengthSent = nbiot.socketSend(socketID, "195.34.89.241", 7, buffer, size);
     DEBUG_STREAM.print("Length buffer vs sent:");
