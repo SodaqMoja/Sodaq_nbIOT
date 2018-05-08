@@ -21,6 +21,10 @@ License along with Sodaq_nbIOT.  If not, see
 #include "Sodaq_nbIOT.h"
 #include "Sodaq_wdt.h"
 
+// Select one of the operators
+//#define VODAFONE_NL
+//#define TMOBILE_NL
+
 #if defined(ARDUINO_AVR_LEONARDO)
 /* Arduino Leonardo + SODAQ NB-IoT Shield */
 #define DEBUG_STREAM Serial 
@@ -68,10 +72,17 @@ License along with Sodaq_nbIOT.  If not, see
 
 #define STARTUP_DELAY 5000
 
+#if defined(VODAFONE_NL)
 const char* apn = "nb.inetd.gdsp";
 const char* cdp = "172.16.14.22";
 const uint8_t band = 20;
 const char* forceOperator = "20404"; // optional - depends on SIM / network
+#elif defined(TMOBILE_NL)
+const char* apn = "cdp.iot.t-mobile.nl";
+const char* cdp = "172.27.131.100";
+const uint8_t band = 8;
+const char* forceOperator = "20416"; // optional - depends on SIM / network
+#endif
 
 Sodaq_nbIOT nbiot;
 
@@ -90,10 +101,13 @@ void sendMessageThroughUDP()
 
     DEBUG_STREAM.println("Created socket!");
 
-    char* buffer = "FFAAFF";
-    uint8_t size = strlen(buffer) / 2;
-    // "195.34.89.241" : 7 is the ublox echo service
-    int lengthSent = nbiot.socketSend(socketID, "195.34.89.241", 7, buffer, size);
+    char* buffer = "74657374"; // test in hex
+    uint8_t size = strlen(buffer);
+#if defined(VODAFONE_NL)
+    int lengthSent = nbiot.socketSend(socketID, "195.34.89.241", 7, buffer, size); // "195.34.89.241" : 7 is the ublox echo service
+#elif defined(TMOBILE_NL)
+    int lengthSent = nbiot.socketSend(socketID, "172.27.131.100", 15683, buffer, size); // "172.27.131.100", 15683 is the T-Mobile NL CDP   
+#endif
     DEBUG_STREAM.print("Length buffer vs sent:");
     DEBUG_STREAM.print(size);
     DEBUG_STREAM.println(lengthSent);
