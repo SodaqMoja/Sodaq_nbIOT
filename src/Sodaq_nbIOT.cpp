@@ -1200,8 +1200,7 @@ ResponseTypes Sodaq_nbIOT::_cclkParser(ResponseTypes& response, const char* buff
     
     // format: "yy/MM/dd,hh:mm:ss+TZ
     int y, m, d, h, min, sec, tz;
-    
-    if (sscanf(buffer, "+CCLK: %d/%d/%d,%d:%d:%d+%d", &y, &m, &d, &h, &min, &sec, &tz) == 7) {
+    if (sscanf(buffer, "+CCLK: \"%d/%d/%d,%d:%d:%d+%d\"", &y, &m, &d, &h, &min, &sec, &tz) == 7) {
         *epoch = convertDatetimeToEpoch(y, m, d, h, min, sec);
         return ResponseEmpty;
     }
