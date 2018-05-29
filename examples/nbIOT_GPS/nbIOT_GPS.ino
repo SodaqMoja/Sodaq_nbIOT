@@ -5,17 +5,41 @@
 #if defined(ARDUINO_AVR_LEONARDO)
 #define DEBUG_STREAM Serial 
 #define MODEM_STREAM Serial1
+#define powerPin 7 
+#define gpsEnablePin 6
 
 #elif defined(ARDUINO_SODAQ_EXPLORER)
 #define DEBUG_STREAM SerialUSB
 #define MODEM_STREAM Serial
+#define powerPin 7 
+#define gpsEnablePin 6
 
 #elif defined(ARDUINO_SAM_ZERO)
 #define DEBUG_STREAM SerialUSB
 #define MODEM_STREAM Serial1
+#define powerPin 7 
+#define gpsEnablePin 6
+
+#elif defined(ARDUINO_SODAQ_SARA)
+#define DEBUG_STREAM SerialUSB
+#define MODEM_STREAM Serial1
+#define powerPin SARA_ENABLE
+#define enablePin SARA_TX_ENABLE
+#define gpsEnablePin GPS_ENABLE
+
+
+#elif defined(ARDUINO_SODAQ_SFF)
+#define DEBUG_STREAM SerialUSB
+#define MODEM_STREAM Serial1
+#define powerPin SARA_ENABLE
+#define gpsEnablePin GPS_ENABLE
 
 #else
 #error "Please select one of the listed boards."
+#endif
+
+#ifndef enablePin 
+    #define enablePin -1
 #endif
 
 #define ARRAY_DIM(arr)  (sizeof(arr) / sizeof(arr[0]))
@@ -57,9 +81,9 @@ void setup()
     }
 
     DEBUG_STREAM.begin(57600);
-    MODEM_STREAM.begin(nbiot.getDefaultBaudrate());
+    MODEM_STREAM.begin(nbiot.getSaraN2Baudrate());
 
-    nbiot.init(MODEM_STREAM, 7);
+    nbiot.init(MODEM_STREAM, powerPin, enablePin);
     nbiot.setDiag(DEBUG_STREAM);
 
     if (nbiot.connect("cdp.iot.t-mobile.nl", "172.27.131.100", "20416")) {
@@ -70,20 +94,9 @@ void setup()
         return;
     }
 
-    digitalWrite(13, HIGH);
-    pinMode(13, OUTPUT);
-    //digitalWrite(LED_GREEN, HIGH);
-    //pinMode(LED_GREEN, OUTPUT);
-    //digitalWrite(LED_BLUE, HIGH);
-    //pinMode(LED_BLUE, OUTPUT);
-
-    do_flash_led(13);
-    //do_flash_led(LED_GREEN);
-    //do_flash_led(LED_BLUE);
-
     DEBUG_STREAM.println("SODAQ NB-IoT SAM-M8Q test is starting ...");
 
-    sodaq_gps.init(6);
+    sodaq_gps.init(gpsEnablePin);
 
     // This is for debugging to see more details, more messages
     // Use this in combination with setDiag()
@@ -133,15 +146,5 @@ void find_fix(uint32_t delay_until)
         if (!nbiot.sendMessage("No Fix")) {
             DEBUG_STREAM.println("Could not queue message!");
         }
-    }
-}
-
-void do_flash_led(int pin)
-{
-    for (size_t i = 0; i < 2; ++i) {
-        delay(100);
-        digitalWrite(pin, LOW);
-        delay(100);
-        digitalWrite(pin, HIGH);
     }
 }
