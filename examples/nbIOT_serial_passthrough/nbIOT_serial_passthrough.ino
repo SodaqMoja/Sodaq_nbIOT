@@ -1,5 +1,7 @@
 #include <Arduino.h>
 
+#define R4XX // Uncomment when you use the ublox R4XX module
+
 #if defined(ARDUINO_AVR_LEONARDO)
 /* Arduino Leonardo + SODAQ NB-IoT Shield */
 #define DEBUG_STREAM Serial 
@@ -37,19 +39,37 @@
 #define MODEM_STREAM Serial1
 #define powerPin SARA_ENABLE
 #define enablePin SARA_TX_ENABLE
+#define voltagePin SARA_R4XX_TOGGLE
+
+#elif defined(ARDUINO_SODAQ_SFF)
+/* SODAQ SARA SFF */
+#define DEBUG_STREAM SerialUSB
+#define MODEM_STREAM Serial1
+#define powerPin SARA_ENABLE
+#define voltagePin SARA_R4XX_TOGGLE
 
 #else
 #error "Please use one of the listed boards or add your board."
 #endif
 
+#if defined(R4XX)
+unsigned long baud = 115200;  //start at 115200 allow the USB port to change the Baudrate
+#else 
 unsigned long baud = 9600;  //start at 9600 allow the USB port to change the Baudrate
+#endif
 
 void setup() 
 {
 #ifdef powerPin
-    // Turn the nb-iot module on
+    // Put voltage on the nb-iot module
     pinMode(powerPin, OUTPUT);
     digitalWrite(powerPin, HIGH);
+#endif
+
+#ifdef R4XX
+    // Switch module voltage
+    pinMode(voltagePin, OUTPUT);
+    digitalWrite(voltagePin, LOW);
 #endif
 
 #ifdef enablePin
