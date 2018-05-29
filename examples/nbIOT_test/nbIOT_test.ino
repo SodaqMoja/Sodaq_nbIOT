@@ -59,6 +59,12 @@
 #define MODEM_ON_OFF_PIN SARA_ENABLE
 #define MODEM_DTR SARA_TX_ENABLE
 
+#elif defined(ARDUINO_SODAQ_SFF)
+/* SODAQ SARA SFF */
+#define DEBUG_STREAM SerialUSB
+#define MODEM_STREAM Serial1
+#define MODEM_ON_OFF_PIN SARA_ENABLE
+
 #else
 #error "You need to declare the modem on/off pin and stream for your particular board!"
 #endif
@@ -81,7 +87,7 @@ void setup()
     sodaq_wdt_safe_delay(STARTUP_DELAY);
 
     DEBUG_STREAM.begin(DEBUG_STREAM_BAUD);
-    MODEM_STREAM.begin(nbiot.getDefaultBaudrate());
+    MODEM_STREAM.begin(nbiot.getSaraN2Baudrate());
 
     DEBUG_STREAM.print("Initializing and connecting... ");
 
