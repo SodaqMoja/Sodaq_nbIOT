@@ -63,6 +63,12 @@ License along with Sodaq_nbIOT.  If not, see
 #define powerPin SARA_ENABLE
 #define enablePin SARA_TX_ENABLE
 
+#elif defined(ARDUINO_SODAQ_SFF)
+/* SODAQ SARA SFF*/
+#define DEBUG_STREAM SerialUSB
+#define MODEM_STREAM Serial1
+#define powerPin SARA_ENABLE
+
 #else
 #error "Please use one of the listed boards or add your board."
 #endif
@@ -157,11 +163,15 @@ void setup()
     nbiot.init(MODEM_STREAM, powerPin);
     nbiot.setDiag(DEBUG_STREAM);
 
+#ifdef SARA_TX_ENABLE
     pinMode(SARA_TX_ENABLE, OUTPUT);
-    pinMode(SARA_RESET, OUTPUT);
-
     digitalWrite(SARA_TX_ENABLE, HIGH);
+#endif
+
+#ifdef SARA_RESET
+    pinMode(SARA_RESET, OUTPUT);    
     digitalWrite(SARA_RESET, HIGH);
+#endif
 
     nbiot.overrideNconfigParam("CR_0354_0338_SCRAMBLING", true);
 
@@ -175,4 +185,5 @@ void setup()
 void loop()
 {
     sodaq_wdt_safe_delay(5000);
+    sendMessageThroughUDP();
 }
