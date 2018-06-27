@@ -1000,11 +1000,6 @@ ResponseTypes Sodaq_nbIOT::_udpReadURCParser(ResponseTypes& response, const char
     return ResponseError;
 }
 
-bool connectSocket(uint8_t socket, const char* host, uint16_t port)
-{
-    return false;
-}
-
 // Disconnects the modem from the network.
 bool Sodaq_nbIOT::disconnect()
 {
