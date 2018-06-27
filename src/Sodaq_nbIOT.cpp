@@ -252,9 +252,7 @@ ResponseTypes Sodaq_nbIOT::readResponse(char* buffer, size_t size,
 
                 continue;
             }
-            else if (_isSaraR4XX && 
-                    (sscanf(buffer, "+UUSORF: %d,%d", &param1, &param2) == 2 ||
-                    sscanf(buffer, "+USORF: %d,%d", &param1, &param2) == 2) ){ // Handle socket URC for R4
+            else if (sscanf(buffer, "+UUSORF: %d,%d", &param1, &param2) == 2) {
                 int socketID = param1;
                 int dataLength = param2;
 
