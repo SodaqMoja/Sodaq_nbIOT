@@ -429,7 +429,7 @@ bool Sodaq_nbIOT::connect(const char* apn, const char* cdp, const char* forceOpe
     if (_isSaraR4XX) {
         setR4XXToNarrowband();
         // set data transfer to hex mode
-        println("AT+UDCONF=1");
+        println("AT+UDCONF=1,1");
         readResponse();
     }
 
