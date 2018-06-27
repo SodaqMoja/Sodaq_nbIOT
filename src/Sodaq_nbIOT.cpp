@@ -427,6 +427,11 @@ bool Sodaq_nbIOT::connect(const char* apn, const char* cdp, const char* forceOpe
 
 
     if (_isSaraR4XX) {
+        println("ATE0"); // echo off
+        if (readResponse() != ResponseOK) {
+            debugPrintLn("Error: Failed to turn off echo")
+        }
+
         setR4XXToNarrowband();
         // set data transfer to hex mode
         println("AT+UDCONF=1,1");
