@@ -699,7 +699,7 @@ size_t Sodaq_nbIOT::socketSend(uint8_t socket, const char* remoteIP, const uint1
     print(remotePort);
     print(',');
     if (_isSaraR4XX) {
-        print(size);
+        print(size / 2);
     }
     else {
         print(size / 2);
@@ -815,7 +815,7 @@ size_t Sodaq_nbIOT::socketReceiveBytes(uint8_t* buffer, size_t length, SaraN2UDP
     size_t receivedSize = socketReceive(p ? p : &packet, tempBuffer, size);
 
     if (buffer && length > 0) {
-        for (size_t i = 0; i < receivedSize; i += 2) {
+        for (size_t i = 0; i < receivedSize * 2; i += 2) {
             buffer[i / 2] = HEX_PAIR_TO_BYTE(tempBuffer[i], tempBuffer[i + 1]);
         }
     }
