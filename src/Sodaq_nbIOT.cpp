@@ -376,8 +376,7 @@ bool Sodaq_nbIOT::setR4XXToNarrowband()
     println("AT+URAT=?");
     readResponse();
 
-
-    println("AT+URAT=99,8");
+    println("AT+URAT=8,8,8");
 
     return (readResponse() == ResponseOK);
 }
