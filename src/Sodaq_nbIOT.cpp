@@ -721,7 +721,9 @@ size_t Sodaq_nbIOT::socketSend(uint8_t socket, const char* remoteIP, const uint1
 
 bool Sodaq_nbIOT::waitForUDPResponse(uint32_t timeoutMS)
 {
-    if (hasPendingUDPBytes()) { return true; }
+    if (hasPendingUDPBytes()) { 
+        return true; 
+    }
     
     uint32_t startTime = millis();
     
@@ -761,7 +763,9 @@ bool Sodaq_nbIOT::hasPendingUDPBytes()
 
 size_t Sodaq_nbIOT::socketReceive(SaraN2UDPPacketMetadata* packet, char* buffer, size_t size)
 {
-    if (_pendingUDPBytes == 0) {
+    size_t maxBufferSize = size;
+
+    if (!hasPendingUDPBytes()) {
         // no URC has happened, no socket to read
         debugPrintLn("Reading from without available bytes!");
         return 0;
