@@ -346,6 +346,12 @@ bool Sodaq_nbIOT::setCdp(const char* cdp)
         debugPrintLn("Set CDP not supported for R4XX");
         return false;
     }
+
+    if (strlen(cdp) == 0) {
+        debugPrintLn("Skipping empty CDP");
+        return true;
+    }
+
     print("AT+NCDP=\"");
     print(cdp);
     println("\"");
