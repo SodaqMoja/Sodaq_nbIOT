@@ -775,16 +775,14 @@ size_t Sodaq_nbIOT::socketReceive(SaraN2UDPPacketMetadata* packet, char* buffer,
     }
     print(_receivedUDPResponseSocket);
     print(',');
-    if (_isSaraR4XX) {
-        println(size/2);
-    }
-    else {
-        println(size);
-    }
+
+    size_t readSize = min(maxBufferSize, _pendingUDPBytes);
+    println(readSize);
     
     if (readResponse<SaraN2UDPPacketMetadata, char>(_udpReadSocketParser, packet, buffer) == ResponseOK) {
         // update pending bytes
         _pendingUDPBytes -= packet->length;
+        
         return packet->length;
     }
     
