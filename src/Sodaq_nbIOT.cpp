@@ -738,7 +738,6 @@ bool Sodaq_nbIOT::waitForUDPResponse(uint32_t timeoutMS)
             size_t length;
 
             if (readResponse<uint8_t, size_t>(_udpReadURCParser, &socketID, &length) == ResponseOK) {
-                _receivedUDPResponseSocket = socketID;
                 _pendingUDPBytes = length;
             }
         }
