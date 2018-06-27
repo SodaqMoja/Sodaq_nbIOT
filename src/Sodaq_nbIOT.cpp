@@ -58,6 +58,7 @@
 #endif
 
 #define DEFAULT_CID "0"
+#define CR '\r'
 
 #define NO_IP_ADDRESS ((IP_t)0)
 
@@ -903,6 +904,11 @@ ResponseTypes Sodaq_nbIOT::_udpReadSocketParser(ResponseTypes& response, const c
         return ResponseError;
     }
 
+    // fixes bad behavior from the module, size == 1 is a sanity check to prevent future bugs passing silently
+    if ((size == 1) && (buffer[0] == CR)) {
+        return ResponsePendingExtra;
+    }
+
     int socketID;
 
     if (sscanf(buffer, "%d,\"%[^\"]\",%d,%d,\"%[^\"]\",%d", &socketID, packet->ip, &packet->port, &packet->length, data, &packet->remainingLength) == 6) {
@@ -956,6 +962,12 @@ ResponseTypes Sodaq_nbIOT::_messageReceiveParser(ResponseTypes& response, const 
 ResponseTypes Sodaq_nbIOT::_udpReadURCParser(ResponseTypes& response, const char* buffer, size_t size, 
     uint8_t* socket, size_t* length)
 {
+
+    // fixes bad behavior from the module, size == 1 is a sanity check to prevent future bugs passing silently
+    if ((size == 1) && (buffer[0] == CR)) {
+        return ResponsePendingExtra;
+    }
+
     int socketID;
     int receiveSize;
 
