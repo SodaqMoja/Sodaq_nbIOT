@@ -728,7 +728,7 @@ bool Sodaq_nbIOT::waitForUDPResponse(uint32_t timeoutMS)
     while (!hasPendingUDPBytes() && (millis() - startTime) < timeoutMS) {
         if (_isSaraR4XX) {
             print("AT+USORF=");
-            print(0);
+            print(_receivedUDPResponseSocket);
             print(",");
             println(0); 
 
