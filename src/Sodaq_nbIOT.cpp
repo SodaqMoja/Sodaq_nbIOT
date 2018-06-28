@@ -57,7 +57,6 @@
 #define debugPrint(...)
 #endif
 
-#define DEFAULT_CID "0"
 #define CR '\r'
 
 #define NO_IP_ADDRESS ((IP_t)0)
@@ -132,7 +131,7 @@ bool Sodaq_nbIOT::isAlive()
 }
 
 // Initializes the modem instance. Sets the modem stream and the on-off power pins.
-void Sodaq_nbIOT::init(Stream& stream, int8_t onoffPin, int8_t txEnablePin, int8_t saraR4XXTogglePin)
+void Sodaq_nbIOT::init(Stream& stream, int8_t onoffPin, int8_t txEnablePin, int8_t saraR4XXTogglePin, uint8_t cid)
 {
     debugPrintLn("[init] started.");
 
@@ -149,6 +148,7 @@ void Sodaq_nbIOT::init(Stream& stream, int8_t onoffPin, int8_t txEnablePin, int8
     _onoff = &sodaq_nbIotOnOff;
     
     setTxEnablePin(txEnablePin);
+	_cid = cid;
 }
 
 bool Sodaq_nbIOT::setRadioActive(bool on)
@@ -326,7 +326,9 @@ ResponseTypes Sodaq_nbIOT::readResponse(char* buffer, size_t size,
 
 bool Sodaq_nbIOT::setApn(const char* apn)
 {
-    print("AT+CGDCONT=" DEFAULT_CID ",\"IP\",\"");
+    print("AT+CGDCONT=");
+    print(_cid);
+    print(",\"IP\",\"");
     print(apn);
     println("\"");
     
