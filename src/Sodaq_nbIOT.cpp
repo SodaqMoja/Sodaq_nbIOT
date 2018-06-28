@@ -698,12 +698,7 @@ size_t Sodaq_nbIOT::socketSend(uint8_t socket, const char* remoteIP, const uint1
     print(',');
     print(remotePort);
     print(',');
-    if (_isSaraR4XX) {
-        print(size / 2);
-    }
-    else {
-        print(size / 2);
-    }
+    print(size / 2);
     print(',');
     print('\"');
     print(buffer);
