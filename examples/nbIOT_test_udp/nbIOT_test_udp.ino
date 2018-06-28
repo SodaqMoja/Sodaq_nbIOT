@@ -30,18 +30,21 @@ License along with Sodaq_nbIOT.  If not, see
 #define DEBUG_STREAM Serial 
 #define MODEM_STREAM Serial1
 #define powerPin 7 
+#define enablePin -1
 
 #elif defined(ARDUINO_SODAQ_EXPLORER)
 /* SODAQ Explorer + SODAQ NB-IoT Shield */
 #define DEBUG_STREAM SerialUSB
 #define MODEM_STREAM Serial
-#define powerPin 7 
+#define powerPin 7
+#define enablePin -1
 
 #elif defined(ARDUINO_SAM_ZERO)
 /* Arduino Zero / M0 + SODAQ NB-IoT Shield */
 #define DEBUG_STREAM SerialUSB
 #define MODEM_STREAM Serial1
 #define powerPin 7 
+#define enablePin -1
 
 #elif defined(ARDUINO_SODAQ_AUTONOMO)
 /* SODAQ AUTONOMO + SODAQ NB-IoT Bee */
@@ -55,6 +58,7 @@ License along with Sodaq_nbIOT.  If not, see
 #define DEBUG_STREAM Serial
 #define MODEM_STREAM Serial1
 #define enablePin BEEDTR
+#define powerPin -1
 
 #elif defined(ARDUINO_SODAQ_SARA)
 /* SODAQ SARA */
@@ -68,6 +72,7 @@ License along with Sodaq_nbIOT.  If not, see
 #define DEBUG_STREAM SerialUSB
 #define MODEM_STREAM Serial1
 #define powerPin SARA_ENABLE
+#define enablePin -1
 
 #else
 #error "Please use one of the listed boards or add your board."
@@ -81,11 +86,13 @@ License along with Sodaq_nbIOT.  If not, see
 #if defined(VODAFONE_NL)
 const char* apn = "nb.inetd.gdsp";
 const char* cdp = "172.16.14.22";
+uint8_t cid = 0;
 const uint8_t band = 20;
 const char* forceOperator = "20404"; // optional - depends on SIM / network
 #elif defined(TMOBILE_NL)
 const char* apn = "cdp.iot.t-mobile.nl";
 const char* cdp = "172.27.131.100";
+uint8_t cid = 1;
 const uint8_t band = 8;
 const char* forceOperator = "20416"; // optional - depends on SIM / network
 #endif
@@ -112,7 +119,7 @@ void sendMessageThroughUDP()
 #if defined(VODAFONE_NL)
     int lengthSent = nbiot.socketSend(socketID, "195.34.89.241", 7, buffer, size); // "195.34.89.241" : 7 is the ublox echo service
 #elif defined(TMOBILE_NL)
-    int lengthSent = nbiot.socketSend(socketID, "172.27.131.100", 15683, buffer, size); // "172.27.131.100", 15683 is the T-Mobile NL CDP   
+    int lengthSent = nbiot.socketSend(socketID, "172.27.131.100", 15683, buffer, size); // "172.27.131.100" : 15683 is the T-Mobile NL CDP   
 #endif
     DEBUG_STREAM.print("Length buffer vs sent:");
     DEBUG_STREAM.print(size);
@@ -156,24 +163,26 @@ void setup()
     sodaq_wdt_safe_delay(STARTUP_DELAY);
 
     DEBUG_STREAM.begin(DEBUG_STREAM_BAUD);
-    MODEM_STREAM.begin(nbiot.getDefaultBaudrate());
-
     DEBUG_STREAM.println("Initializing and connecting... ");
 
-    nbiot.init(MODEM_STREAM, powerPin);
+#ifdef R4XX
+    MODEM_STREAM.begin(nbiot.getSaraR4Baudrate());
     nbiot.setDiag(DEBUG_STREAM);
-
-#ifdef SARA_TX_ENABLE
-    pinMode(SARA_TX_ENABLE, OUTPUT);
-    digitalWrite(SARA_TX_ENABLE, HIGH);
-#endif
+    nbiot.init(MODEM_STREAM, powerPin, enablePin, SARA_R4XX_TOGGLE, cid);
+#else
+    MODEM_STREAM.begin(nbiot.getDefaultBaudrate());
+    nbiot.setDiag(DEBUG_STREAM);
+    nbiot.init(MODEM_STREAM, powerPin, enablePin, -1, cid);
+#endif               
 
 #ifdef SARA_RESET
     pinMode(SARA_RESET, OUTPUT);    
     digitalWrite(SARA_RESET, HIGH);
 #endif
 
+#ifndef R4XX
     nbiot.overrideNconfigParam("CR_0354_0338_SCRAMBLING", true);
+#endif
 
     if (!nbiot.connect(apn, cdp, forceOperator, band)) {
         DEBUG_STREAM.println("FAILED TO CONNECT TO MODEM");
@@ -184,6 +193,13 @@ void setup()
 
 void loop()
 {
-    sodaq_wdt_safe_delay(5000);
-    sendMessageThroughUDP();
+    sodaq_wdt_safe_delay(60000);
+    if (!nbiot.isConnected()) {
+        if (!nbiot.connect(apn, cdp, forceOperator, band)) {
+            DEBUG_STREAM.println("FAILED TO CONNECT TO MODEM");
+        }
+    }
+    else {
+        sendMessageThroughUDP();
+    }
 }
