@@ -376,7 +376,7 @@ bool Sodaq_nbIOT::setR4XXToNarrowband()
     println("AT+URAT=?");
     readResponse();
 
-    println("AT+URAT=8,8,8");
+    println("AT+URAT=8");
 
     return (readResponse() == ResponseOK);
 }
@@ -424,7 +424,6 @@ bool Sodaq_nbIOT::connect(const char* apn, const char* cdp, const char* forceOpe
             return false;
         }
     }
-
 
     if (_isSaraR4XX) {
         println("ATE0"); // echo off
