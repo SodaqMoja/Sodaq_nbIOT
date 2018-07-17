@@ -84,9 +84,9 @@ typedef struct NameValuePair {
 
 const uint8_t nConfigCount = 6;
 static NameValuePair nConfig[nConfigCount] = {
-    { "AUTOCONNECT", false },
+    { "AUTOCONNECT", true },
     { "CR_0354_0338_SCRAMBLING", true },
-    { "CR_0859_SI_AVOID", false },
+    { "CR_0859_SI_AVOID", true },
     { "COMBINE_ATTACH", false },
     { "CELL_RESELECTION", false },
     { "ENABLE_BIP", false },
