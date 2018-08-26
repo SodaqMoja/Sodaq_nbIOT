@@ -1502,6 +1502,7 @@ void Sodaq_nbIotOnOff::on()
     }
 
     if (_saraR4XXTogglePin >= 0) {
+        pinMode(_saraR4XXTogglePin, OUTPUT);
         digitalWrite(_saraR4XXTogglePin, LOW);
         sodaq_wdt_safe_delay(2000);
         pinMode(_saraR4XXTogglePin, INPUT);
