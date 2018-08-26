@@ -1319,7 +1319,11 @@ ResponseTypes Sodaq_nbIOT::_cclkParser(ResponseTypes& response, const char* buff
         *epoch = convertDatetimeToEpoch(y, m, d, h, min, sec);
         return ResponseEmpty;
     }
-    
+    else if (sscanf(buffer, "+CCLK: \"%d/%d/%d,%d:%d:%d\"", &y, &m, &d, &h, &min, &sec) == 6) {
+        *epoch = convertDatetimeToEpoch(y, m, d, h, min, sec);
+        return ResponseEmpty;
+    }
+
     return ResponseError;
 }
 
