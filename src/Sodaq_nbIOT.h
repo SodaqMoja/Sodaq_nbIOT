@@ -109,7 +109,8 @@ class Sodaq_nbIOT: public Sodaq_AT_Device
         int8_t getLastRSSI() const { return _lastRSSI; }
         
         int createSocket(uint16_t localPort = 0);
-        size_t socketSend(uint8_t socket, const char* remoteIP, const uint16_t remotePort, char* buffer, size_t size);
+        size_t socketSend(uint8_t socket, const char* remoteIP, const uint16_t remotePort, const uint8_t* buffer, size_t size);
+        size_t socketSend(uint8_t socket, const char* remoteIP, const uint16_t remotePort, const char* str);
         size_t socketReceiveHex(char* buffer, size_t length, SaraN2UDPPacketMetadata* p = NULL);
         size_t socketReceiveBytes(uint8_t* buffer, size_t length, SaraN2UDPPacketMetadata* p = NULL);
         size_t getPendingUDPBytes();

@@ -781,7 +781,7 @@ bool Sodaq_nbIOT::ping(const char* ip)
     return readResponse() == ResponseOK;
 }
 
-size_t Sodaq_nbIOT::socketSend(uint8_t socket, const char* remoteIP, const uint16_t remotePort, char* buffer, size_t size)
+size_t Sodaq_nbIOT::socketSend(uint8_t socket, const char* remoteIP, const uint16_t remotePort, const uint8_t* buffer, size_t size)
 {
     if (size > SODAQ_NBIOT_MAX_UDP_BUFFER) {
         debugPrintLn("SocketSend exceeded maximum buffer size!");
@@ -803,20 +803,31 @@ size_t Sodaq_nbIOT::socketSend(uint8_t socket, const char* remoteIP, const uint1
     print(',');
     print(remotePort);
     print(',');
-    print(size / 2);
+    print(size);
     print(',');
     print('\"');
-    print(buffer);
+
+    for (size_t i = 0; i < size; ++i) {
+        print(static_cast<char>(NIBBLE_TO_HEX_CHAR(HIGH_NIBBLE(buffer[i]))));
+        print(static_cast<char>(NIBBLE_TO_HEX_CHAR(LOW_NIBBLE(buffer[i]))));
+    }
+
     println('\"');
     
     uint8_t retSocketID;
     size_t sentLength;
     
     if (readResponse<uint8_t, size_t>(_sendSocketParser, &retSocketID, &sentLength) == ResponseOK) {
-        return socket;
+        return sentLength;
     }
-    
-    return sentLength;
+    else {
+        return 0;
+    }
+}
+
+size_t Sodaq_nbIOT::socketSend(uint8_t socket, const char* remoteIP, const uint16_t remotePort, const char* str)
+{
+    return socketSend(socket, remoteIP, remotePort, (uint8_t *)str, strlen(str));
 }
 
 bool Sodaq_nbIOT::waitForUDPResponse(uint32_t timeoutMS)
