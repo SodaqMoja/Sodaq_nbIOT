@@ -114,23 +114,24 @@ void sendMessageThroughUDP()
 
     DEBUG_STREAM.println("Created socket!");
 
-    char* buffer = "74657374"; // test in hex
-    uint8_t size = strlen(buffer);
+    const char* strBuffer = "test";
+    size_t size = strlen(strBuffer);
+
 #if defined(VODAFONE_NL)
-    int lengthSent = nbiot.socketSend(socketID, "195.34.89.241", 7, buffer, size); // "195.34.89.241" : 7 is the ublox echo service
+    int lengthSent = nbiot.socketSend(socketID, "195.34.89.241", 7, strBuffer); // "195.34.89.241" : 7 is the ublox echo service
 #elif defined(TMOBILE_NL)
-    int lengthSent = nbiot.socketSend(socketID, "172.27.131.100", 15683, buffer, size); // "172.27.131.100" : 15683 is the T-Mobile NL CDP   
+    int lengthSent = nbiot.socketSend(socketID, "172.27.131.100", 15683, strBuffer); // "172.27.131.100" : 15683 is the T-Mobile NL CDP   
 #endif
-    DEBUG_STREAM.print("Length buffer vs sent:");
+    DEBUG_STREAM.print("String length vs sent: ");
     DEBUG_STREAM.print(size);
+    DEBUG_STREAM.print(" vs ");
     DEBUG_STREAM.println(lengthSent);
 
     // wait for data
     if (nbiot.waitForUDPResponse()) {
-        DEBUG_STREAM.println("GOT RESPONSE");
+        DEBUG_STREAM.println("Received response!");
 
         while (nbiot.hasPendingUDPBytes()) {
-
             char data[200];
             // read two bytes at a time
             SaraN2UDPPacketMetadata p;
@@ -151,7 +152,7 @@ void sendMessageThroughUDP()
         }
     }
     else {
-        DEBUG_STREAM.println("TIMEOUT!!");
+        DEBUG_STREAM.println("Timed-out!");
     }
 
     nbiot.closeSocket(socketID);
@@ -185,7 +186,7 @@ void setup()
 #endif
 
     if (!nbiot.connect(apn, cdp, forceOperator, band)) {
-        DEBUG_STREAM.println("FAILED TO CONNECT TO MODEM");
+        DEBUG_STREAM.println("Failed to connect to the modem!");
     }
 
     sendMessageThroughUDP();
@@ -196,7 +197,7 @@ void loop()
     sodaq_wdt_safe_delay(60000);
     if (!nbiot.isConnected()) {
         if (!nbiot.connect(apn, cdp, forceOperator, band)) {
-            DEBUG_STREAM.println("FAILED TO CONNECT TO MODEM");
+            DEBUG_STREAM.println("Failed to connect to the modem!");
         }
     }
     else {
