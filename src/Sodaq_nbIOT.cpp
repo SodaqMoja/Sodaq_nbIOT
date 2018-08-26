@@ -908,10 +908,10 @@ size_t Sodaq_nbIOT::socketReceiveHex(char* buffer, size_t length, SaraN2UDPPacke
 
 size_t Sodaq_nbIOT::socketReceiveBytes(uint8_t* buffer, size_t length, SaraN2UDPPacketMetadata* p)
 {
-    size_t size = min(length, min(MAX_UDP_BUFFER, _pendingUDPBytes));
+    size_t size = min(length, min(SODAQ_NBIOT_MAX_UDP_BUFFER, _pendingUDPBytes));
 
     SaraN2UDPPacketMetadata packet;
-    char tempBuffer[MAX_UDP_BUFFER];
+    char tempBuffer[SODAQ_NBIOT_MAX_UDP_BUFFER];
 
     size_t receivedSize = socketReceive(p ? p : &packet, tempBuffer, size);
 
