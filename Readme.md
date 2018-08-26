@@ -1,8 +1,8 @@
-# Sodaq_nbIOT
+# Sodaq_nbIOT v2
 
 Arduino library for using with the uBlox nbIOT modules.
 
-The firmware version of the module should be >= 06.57,A03.02. 
+The firmware version of the module should be >= 06.57,A03.02.
 
 Please check http://support.sodaq.com/sodaq-one/firmware-upgrade/ for the latest firmware.
 
@@ -78,18 +78,14 @@ Method|Description
 **getSentMessagesCount(SentMessageStatus filter)**|Returns the number of messages that are either pending (filter == Pending) or failed to be transmitted (filter == Error) on the modem.
 **createSocket(uint16_t localPort = 0)**|Create a UDP socket for the specified local port, returns the socket handle.
 **closeSocket(uint8_t socket)**|Close a UDP socket by handle, returns true if successful.
-**socketSend(uint8_t socket, const char\* remoteIP, const uint16_t remotePort, char\* buffer, size_t size)**|Send a udp payload buffer to a specified remote IP and port, through a specific socket.
+**socketSend(uint8_t socket, const char\* remoteIP, const uint16_t remotePort,  const uint8_t\* buffer, size_t size)**|Send a UDP payload buffer to a specified remote IP and port, through a specific socket.
+**socketSend(uint8_t socket, const char\* remoteIP, const uint16_t remotePort, const char\* str)**|Send a UDP string to a specified remote IP and port, through a specific socket.
 **socketReceiveHex(char\* buffer, size_t length, SaraN2UDPPacketMetadata\* p = NULL)**|Receive pending socket data as hex data in a passed buffer. Optionally pass a helper object to receive metadata about the origin of the socket data.
 **socketReceiveBytes(uint8_t\* buffer, size_t length, SaraN2UDPPacketMetadata\* p = NULL)**|Receive pending socket data as binary data in a passed buffer. Optionally pass a helper object to receive metadata about the origin of the socket data.
 **getPendingUDPBytes()**| Return the number of pending bytes, gets updated by calling socketReceiveXXX.
 **hasPendingUDPBytes()**| Helper function returning if getPendingUDPBytes() > 0.
 **ping(char\* ip)**| Ping a specific IP address.
 **waitForUDPResponse(uint32_t timeoutMS = DEFAULT_UDP_TIMOUT_MS)**|Calls isAlive() until the passed timeout, or until a UDP packet has been received on any socket.
-
-
-
-
-
 
 ## Contributing
 
@@ -101,7 +97,7 @@ Method|Description
 
 ## License
 
-Copyright (c) 2015-2016 Sodaq.  All rights reserved.
+Copyright (c) 2018 Sodaq.  All rights reserved.
 
 This file is part of Sodaq_nbIOT.
 
