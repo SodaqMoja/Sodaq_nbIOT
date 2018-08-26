@@ -151,6 +151,115 @@ void Sodaq_nbIOT::init(Stream& stream, int8_t onoffPin, int8_t txEnablePin, int8
 	_cid = cid;
 }
 
+// Gets International Mobile Equipment Identity.
+// Should be provided with a buffer of at least 16 bytes.
+// Returns true if successful.
+bool Sodaq_nbIOT::getIMEI(char* buffer, size_t size)
+{
+    if (size < 15 + 1) {
+        return false;
+    }
+
+    if (size > 0) {
+        buffer[0] = 0;
+    }
+
+    println("AT+CGSN");
+
+    return (readResponse<char, size_t>(_nakedStringParser, buffer, &size) == ResponseOK);
+}
+
+ResponseTypes Sodaq_nbIOT::_nakedStringParser(ResponseTypes& response, const char* buffer,
+    size_t size, char* stringBuffer, size_t* stringBufferSize)
+{
+    if (!stringBuffer || !stringBufferSize) {
+        return ResponseError;
+    }
+
+    stringBuffer[0] = 0;
+    if (*stringBufferSize > 0)
+    {
+        strncat(stringBuffer, buffer, *stringBufferSize - 1);
+
+        return ResponseEmpty;
+    }
+
+    return ResponseError;
+}
+
+void Sodaq_nbIOT::setPin(const char * pin)
+{
+    size_t len = strlen(pin);
+    _pin = static_cast<char*>(realloc(_pin, len + 1));
+    strcpy(_pin, pin);
+}
+
+bool Sodaq_nbIOT::doSIMcheck()
+{
+    const uint8_t retry_count = 10;
+    for (uint8_t i = 0; i < retry_count; i++) {
+        if (i > 0) {
+            sodaq_wdt_safe_delay(250);
+        }
+
+        SimStatuses simStatus = getSimStatus();
+        if (simStatus == SimNeedsPin) {
+            if (_pin == 0 || *_pin == '\0' || !setSimPin(_pin)) {
+                debugPrintLn(DEBUG_STR_ERROR "SIM needs a PIN but none was provided, or setting it failed!");
+                return false;
+            }
+        }
+        else if (simStatus == SimReady) {
+            return true;
+        }
+    }
+    return false;
+}
+
+ResponseTypes Sodaq_nbIOT::_cpinParser(ResponseTypes& response, const char* buffer, size_t size,
+    SimStatuses* parameter, uint8_t* dummy)
+{
+    if (!parameter) {
+        return ResponseError;
+    }
+
+    char status[16];
+    if (sscanf(buffer, "+CPIN: %" STR(sizeof(status) - 1) "s", status) == 1) {
+        if (startsWith("READY", status)) {
+            *parameter = SimReady;
+        }
+        else {
+            *parameter = SimNeedsPin;
+        }
+
+        return ResponseEmpty;
+    }
+
+    return ResponseError;
+}
+
+// Returns the current SIM status.
+Sodaq_nbIOT::SimStatuses Sodaq_nbIOT::getSimStatus()
+{
+    SimStatuses simStatus;
+
+    println("AT+CPIN?");
+    if (readResponse<SimStatuses, uint8_t>(_cpinParser, &simStatus, NULL) == ResponseOK) {
+        return simStatus;
+    }
+
+    return SimMissing;
+}
+
+bool Sodaq_nbIOT::setSimPin(const char* simPin)
+{
+    print("AT+CPIN=\"");
+    print(simPin);
+    println("\"");
+
+    return (readResponse() == ResponseOK);
+}
+
 bool Sodaq_nbIOT::setRadioActive(bool on)
 {
     print("AT+CFUN=");
@@ -434,6 +543,10 @@ bool Sodaq_nbIOT::connect(const char* apn, const char* cdp, const char* forceOpe
         // set data transfer to hex mode
         println("AT+UDCONF=1,1");
         readResponse();
+    }
+
+    if (!doSIMcheck()) {
+        return false;
     }
 
 #ifdef DEBUG

@@ -42,6 +42,13 @@ class Sodaq_nbIOT: public Sodaq_AT_Device
     public:
         Sodaq_nbIOT();
         
+        enum SimStatuses {
+            SimStatusUnknown = 0,
+            SimMissing,
+            SimNeedsPin,
+            SimReady,
+        };
+
         enum SentMessageStatus {
             Pending,
             Error
@@ -119,6 +126,11 @@ class Sodaq_nbIOT: public Sodaq_AT_Device
 
         int getSentMessagesCount(SentMessageStatus filter);
         bool getReceivedMessagesCount(ReceivedMessageStatus* status);
+
+        SimStatuses getSimStatus();
+        void setPin(const char* pin);
+
+        bool getIMEI(char* buffer, size_t size);
     protected:
         // override
         ResponseTypes readResponse(char* buffer, size_t size, size_t* outSize, uint32_t timeout = SODAQ_AT_DEVICE_DEFAULT_READ_MS)
@@ -178,11 +190,13 @@ class Sodaq_nbIOT: public Sodaq_AT_Device
         bool _isSaraR4XX;
 		
 		uint8_t _cid;
-        
+
         // flag indicating UDP response via URC
         int _receivedUDPResponseSocket = 0;
         size_t _pendingUDPBytes = 0;
-        
+
+        char* _pin = 0;
+
         static bool startsWith(const char* pre, const char* str);
         static size_t ipToString(IP_t ip, char* buffer, size_t size);
         static bool isValidIPv4(const char* str);
@@ -194,7 +208,9 @@ class Sodaq_nbIOT: public Sodaq_AT_Device
         bool setNconfigParam(const char* param, const char* value);
         bool checkAndApplyNconfig();
         void reboot();
-        
+        bool doSIMcheck();
+        bool setSimPin(const char* simPin);
+
         // For sara R4XX, receiving in chunks does NOT work, you have to receive the full packet
         size_t socketReceive(SaraN2UDPPacketMetadata* packet, char* buffer, size_t size);
         static uint32_t convertDatetimeToEpoch(int y, int m, int d, int h, int min, int sec);
@@ -213,6 +229,8 @@ class Sodaq_nbIOT: public Sodaq_AT_Device
 
         static ResponseTypes _cgattParser(ResponseTypes& response, const char* buffer, size_t size, uint8_t* result, uint8_t* dummy);
         static ResponseTypes _nconfigParser(ResponseTypes& response, const char* buffer, size_t size, bool* nconfigEqualsArray, uint8_t* dummy);
+        static ResponseTypes _cpinParser(ResponseTypes& response, const char* buffer, size_t size, SimStatuses* parameter, uint8_t* dummy);
+        static ResponseTypes _nakedStringParser(ResponseTypes& response, const char* buffer, size_t size, char* stringBuffer, size_t* stringBufferSize);
 };
 
 #endif
