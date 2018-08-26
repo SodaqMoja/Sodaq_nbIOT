@@ -783,7 +783,7 @@ bool Sodaq_nbIOT::ping(const char* ip)
 
 size_t Sodaq_nbIOT::socketSend(uint8_t socket, const char* remoteIP, const uint16_t remotePort, char* buffer, size_t size)
 {
-    if (size > 512) {
+    if (size > SODAQ_NBIOT_MAX_UDP_BUFFER) {
         debugPrintLn("SocketSend exceeded maximum buffer size!");
         return 0;
     }
@@ -1351,7 +1351,7 @@ bool Sodaq_nbIOT::sendMessage(const uint8_t* buffer, size_t size)
     return (readResponse() == ResponseOK);
 }
 
-// NOTE! Need to send data ( sendMessage() ) before receiving is possible through this method
+// NOTE! Need to send data ( sendMessage() ) before receiving
 size_t Sodaq_nbIOT::receiveMessage(char* buffer, size_t size)
 {
     if (_isSaraR4XX) {
