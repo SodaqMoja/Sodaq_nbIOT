@@ -375,9 +375,6 @@ bool Sodaq_nbIOT::setBand(uint8_t band)
 
 bool Sodaq_nbIOT::setR4XXToNarrowband()
 {
-    println("AT+URAT=?");
-    readResponse();
-
     println("AT+URAT=8");
 
     return (readResponse() == ResponseOK);
@@ -493,12 +490,6 @@ bool Sodaq_nbIOT::connect(const char* apn, const char* cdp, const char* forceOpe
     
     println("AT+CGPADDR");
     readResponse();
-    
-    #ifdef DEBUG
-    println("AT+CPSMS?");
-    readResponse();
-    readResponse();
-    #endif
     
     // If we got this far we succeeded
     return true;
