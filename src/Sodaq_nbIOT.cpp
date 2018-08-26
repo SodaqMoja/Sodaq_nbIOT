@@ -1115,7 +1115,7 @@ bool Sodaq_nbIOT::isConnected()
     
     println("AT+CGATT?");
     
-    if (readResponse<uint8_t, uint8_t>(_cgattParser, &value, NULL) == ResponseOK) {
+    if (readResponse<uint8_t, uint8_t>(_cgattParser, &value, NULL, 0, 10 * 1000) == ResponseOK) {
         return (value == 1);
     }
     
