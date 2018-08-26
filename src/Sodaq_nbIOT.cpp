@@ -785,7 +785,7 @@ size_t Sodaq_nbIOT::socketSend(uint8_t socket, const char* remoteIP, const uint1
 {
     if (size > 512) {
         debugPrintLn("SocketSend exceeded maximum buffer size!");
-        return -1;
+        return 0;
     }
     
     // only Datagram/UDP is supported
