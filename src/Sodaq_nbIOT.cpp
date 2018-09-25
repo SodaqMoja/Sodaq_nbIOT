@@ -543,10 +543,10 @@ bool Sodaq_nbIOT::connect(const char* apn, const char* cdp, const char* forceOpe
         // set data transfer to hex mode
         println("AT+UDCONF=1,1");
         readResponse();
-    }
-
-    if (!doSIMcheck()) {
-        return false;
+    
+        if (!doSIMcheck()) {
+            return false;
+        }
     }
 
 #ifdef DEBUG
