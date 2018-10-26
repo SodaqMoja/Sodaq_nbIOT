@@ -1,6 +1,6 @@
 #include <Arduino.h>
 
-#define R4XX // Uncomment when you use the ublox R4XX module
+// #define R4XX // Uncomment when you use the ublox R4XX module
 
 #if defined(ARDUINO_AVR_LEONARDO)
 /* Arduino Leonardo + SODAQ NB-IoT Shield */

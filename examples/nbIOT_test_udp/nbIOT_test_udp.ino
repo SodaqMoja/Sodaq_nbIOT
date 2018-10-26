@@ -21,6 +21,8 @@ License along with Sodaq_nbIOT.  If not, see
 #include "Sodaq_nbIOT.h"
 #include "Sodaq_wdt.h"
 
+// #define R4XX // Uncomment when you use the ublox R4XX module
+
 // Select one of the operators
 //#define VODAFONE_NL
 //#define TMOBILE_NL
