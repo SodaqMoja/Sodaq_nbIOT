@@ -1,3 +1,5 @@
+[![CI](https://github.com/SodaqMoja/Sodaq_nbIOT/actions/workflows/platformio.yml/badge.svg)](https://github.com/SodaqMoja/Sodaq_nbIOT/actions/workflows/platformio.yml)
+
 # Sodaq_nbIOT v2
 
 Arduino library for using with the uBlox nbIOT modules.
